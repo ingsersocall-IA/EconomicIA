@@ -1,0 +1,28 @@
+# Entorno Virtual - ¡NO SUBIR!
+ChatBot/
+venv/
+env/
+
+# Base de datos de desarrollo
+db.sqlite3
+
+# Archivos de registro (Logs)
+*.log
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Carpeta de archivos estáticos de despliegue (STATIC_ROOT).
+# Django los recogerá aquí con "collectstatic".
+/static/
+
+# Carpeta de archivos subidos por usuarios (MEDIA_ROOT)
+/archivos/
+
+# Archivos de entorno con secretos
+.env
+
+# Archivos de configuración de IDEs
+.idea/
+.vscode/

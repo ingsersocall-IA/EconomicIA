@@ -1,0 +1,29 @@
+{% extends 'chat/base.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto w-full p-6">
+  <div class="bg-white dark:bg-gray-900 rounded-2xl shadow border border-gray-100 dark:border-gray-800 p-6">
+    <div class="flex items-center gap-4 mb-6">
+      <div class="h-12 w-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold select-none">
+        {{ user_obj.first_name|default:user_obj.username|slice:":1"|upper }}
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ user_obj.first_name }} {{ user_obj.last_name }}</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ user_obj.username }}</p>
+      </div>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-3 text-sm text-gray-700 dark:text-gray-200">
+      <p><span class="text-gray-500 dark:text-gray-400">Email:</span> {{ user_obj.email|default:'No configurado' }}</p>
+      <p><span class="text-gray-500 dark:text-gray-400">Último acceso:</span> {{ user_obj.last_login|date:'d/m/Y H:i' }}</p>
+      <p><span class="text-gray-500 dark:text-gray-400">Fecha de registro:</span> {{ user_obj.date_joined|date:'d/m/Y H:i' }}</p>
+    </div>
+
+    <div class="mt-6">
+      <a href="{% url 'password_change' %}"
+         class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+        Cambiar contraseña
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

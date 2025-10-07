@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>AGENTE IA - ECONOMIC</title>
+  {% load static %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    (function(){
+      try {
+        var t = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (t === 'dark' || (!t && prefersDark)) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    #animated-bg{position:fixed;inset:0;z-index:-1;background:#0A4795}
+    #animated-bg canvas{width:100%;height:100%}
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-950 flex items-center justify-center min-h-screen relative antialiased">
+<div id="animated-bg" aria-hidden="true"><canvas id="demo-canvas"></canvas></div>
+
+<div class="w-full max-w-sm p-6">
+  <div class="bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
+    <div class="flex items-center justify-center mb-4 select-none">
+      <img src="{% static 'images/logo.png' %}" alt="EconomicIA" class="h-12 w-auto object-contain" loading="eager" decoding="async">
+    </div>
+    <h1 class="text-xl font-semibold mb-1 text-center text-gray-900 dark:text-gray-100 tracking-tight">Iniciar sesión</h1>
+    <p class="text-center text-xs text-gray-500 dark:text-gray-400 mb-6">Agente IA · Economic</p>
+
+    {% if messages %}
+    <div id="login-alerts">
+      {% for message in messages %}
+      <div class="mb-3 px-3 py-2 text-sm rounded-lg bg-{% if message.tags == 'error' %}red{% else %}green{% endif %}-100 text-{% if message.tags == 'error' %}red{% else %}green{% endif %}-800">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="id_username" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Usuario</label>
+        <input type="text" name="username" id="id_username"
+               class="mt-1 w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+               required>
+      </div>
+      <div>
+        <label for="id_password" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Contraseña</label>
+        <input type="password" name="password" id="id_password"
+               class="mt-1 w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+               required>
+      </div>
+      <div class="pt-2 flex items-center justify-between">
+        <button type="submit"
+                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">Ingresar</button>
+        <a href="{% url 'register' %}" class="text-sm text-blue-50 underline decoration-white/30 hover:text-white">¿No tienes cuenta? Regístrate</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- GSAP (tu animación original) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script>
+  (function(){
+    let width, height, canvas, ctx, points, target, animateHeader = true;
+    function init(){
+      width = window.innerWidth; height = window.innerHeight;
+      target = {x: width/2, y: height/2};
+      const holder = document.getElementById('animated-bg'); if(!holder) return;
+      canvas = document.getElementById('demo-canvas'); if(!canvas) return;
+      canvas.width = width; canvas.height = height; ctx = canvas.getContext('2d');
+
+      points = [];
+      for(let x=0; x<width; x+= width/20){
+        for(let y=0; y<height; y+= height/20){
+          const px = x + Math.random()*width/20;
+          const py = y + Math.random()*height/20;
+          const p = {x:px, originX:px, y:py, originY:py};
+          points.push(p);
+        }
+      }
+      for(let i=0;i<points.length;i++){
+        const p1 = points[i]; const closest = [];
+        for(let j=0;j<points.length;j++){
+          const p2 = points[j]; if(p1===p2) continue;
+          let placed=false;
+          for(let k=0;k<5;k++){ if(!closest[k]){ closest[k]=p2; placed=true; break; } }
+          for(let k=0;k<5 && !placed;k++){ if(getDistance(p1,p2) < getDistance(p1, closest[k])){ closest[k]=p2; placed=true; } }
+        }
+        p1.closest = closest;
+      }
+      points.forEach(p=>{ p.circle = new Circle(p, 2+Math.random()*2); shiftPoint(p); });
+      animate();
+    }
+    function shiftPoint(p){ gsap.to(p, { duration: 1 + Math.random(), x: p.originX-50 + Math.random()*100, y: p.originY-50 + Math.random()*100, ease: 'circ.inOut', onComplete: ()=>shiftPoint(p)}); }
+    function animate(){
+      if(!ctx) return;
+      if(animateHeader){
+        ctx.clearRect(0,0,width,height);
+        for(const p of points){
+          const d = Math.abs(getDistance(target,p));
+          if(d < 4000){ p.active=0.3; p.circle.active=0.6; }
+          else if(d < 20000){ p.active=0.1; p.circle.active=0.3; }
+          else if(d < 40000){ p.active=0.02; p.circle.active=0.1; }
+          else { p.active=0; p.circle.active=0; }
+          drawLines(p); p.circle.draw();
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    function drawLines(p){
+      if(!p.active) return;
+      for(const c of p.closest){
+        ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(c.x,c.y);
+        ctx.strokeStyle = 'rgba(156,217,249,'+ p.active +')'; ctx.stroke();
+      }
+    }
+    function Circle(pos, rad){ this.pos=pos; this.radius=rad; this.active=0; this.draw=function(){ if(!this.active) return; ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,this.radius,0,Math.PI*2,false); ctx.fillStyle='rgba(156,217,249,'+this.active+')'; ctx.fill(); } }
+    function getDistance(p1,p2){ return Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2); }
+    window.addEventListener('mousemove', e=>{ target={x:e.clientX, y:e.clientY}; });
+    window.addEventListener('scroll', ()=>{ animateHeader = document.documentElement.scrollTop <= height; });
+    window.addEventListener('resize', ()=>{ width=window.innerWidth; height=window.innerHeight; if(canvas){ canvas.width=width; canvas.height=height; } });
+    init();
+  })();
+</script>
+<script>
+  (function(){ const alerts = document.getElementById('login-alerts'); if(alerts){ setTimeout(()=>alerts.remove(), 4000); }})();
+</script>
+</body>
+</html>

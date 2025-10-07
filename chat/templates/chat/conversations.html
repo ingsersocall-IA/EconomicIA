@@ -1,0 +1,16 @@
+{% extends 'chat/base.html' %}
+{% block content %}
+<div class="flex-1 flex items-center justify-center">
+  <div class="text-center">
+    <div class="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </div>
+    <h2 class="text-xl font-semibold mb-2">Crea tu primera conversación</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Organízalas por carpetas y vuelve cuando quieras.</p>
+    <form action="{% url 'new_conversation' %}" method="post">
+      {% csrf_token %}
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Crear nueva</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

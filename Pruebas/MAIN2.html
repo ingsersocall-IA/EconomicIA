@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Conversacional IA</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 800px;
+      height: 700px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      padding: 25px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+    }
+
+    .chat-header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 5px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    .chat-header p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+
+    .status-indicator {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      display: flex;
+      align-items: center;
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(0.95); }
+    }
+
+    #chatbox {
+      flex: 1;
+      padding: 25px;
+      overflow-y: auto;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 16px 20px;
+      border-radius: 18px;
+      position: relative;
+      animation: messageSlide 0.4s ease-out;
+      word-wrap: break-word;
+      line-height: 1.6;
+    }
+
+    @keyframes messageSlide {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-message {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    }
+
+    .bot-message {
+      align-self: flex-start;
+      background: white;
+      color: #374151;
+      border-bottom-left-radius: 6px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .input-area {
+      padding: 25px;
+      background: white;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    #userInput {
+      flex: 1;
+      padding: 16px 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 25px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+      background: #f9fafb;
+    }
+
+    #userInput:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      background: white;
+    }
+
+    .send-button {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      border: none;
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.3rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    }
+
+    .send-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    }
+
+    .send-button:active {
+      transform: scale(0.95);
+    }
+
+    .send-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      background: white;
+      padding: 16px 20px;
+      border-radius: 18px;
+      border-bottom-left-radius: 6px;
+      margin-bottom: 20px;
+      font-style: italic;
+      color: #6b7280;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .typing-dots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .typing-dots span {
+      width: 8px;
+      height: 8px;
+      background-color: #4f46e5;
+      border-radius: 50%;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-10px); opacity: 1; }
+    }
+
+    .timestamp {
+      font-size: 0.75rem;
+      opacity: 0.6;
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    .welcome-message {
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+      padding: 40px 20px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 15px;
+      margin: 20px;
+      border: 2px dashed #d1d5db;
+    }
+
+    .model-indicator {
+      position: absolute;
+      bottom: 25px;
+      left: 25px;
+      font-size: 0.7rem;
+      opacity: 0.7;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 6px 10px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Scrollbar personalizada */
+    #chatbox::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #chatbox::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    #chatbox::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    #chatbox::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .chat-container {
+        height: 90vh;
+        max-width: 100%;
+        margin: 10px;
+        border-radius: 15px;
+      }
+
+      .chat-header {
+        padding: 20px;
+      }
+
+      .chat-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .status-indicator {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-top: 10px;
+        justify-content: center;
+      }
+
+      #chatbox {
+        padding: 20px;
+        gap: 15px;
+      }
+
+      .message {
+        max-width: 90%;
+        padding: 14px 16px;
+      }
+
+      .input-area {
+        padding: 20px;
+        gap: 12px;
+      }
+
+      #userInput {
+        padding: 14px 18px;
+      }
+
+      .send-button {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="chat-container">
+  <div class="chat-header">
+    <h1>Asistente IA Conversacional</h1>
+    <p>Conversación inteligente con memoria contextual</p>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span>En línea</span>
+    </div>
+    <div class="model-indicator">TalkIA v2.0</div>
+  </div>
+
+  <div id="chatbox">
+    <div class="welcome-message">
+      <p>👋 ¡Hola! Soy tu asistente IA. Puedo mantener conversaciones naturales y recordar el contexto de nuestra charla.</p>
+      <p style="margin-top: 10px; font-size: 0.9em;">Escribe cualquier cosa para comenzar...</p>
+    </div>
+  </div>
+
+  <div class="typing-indicator" id="typingIndicator">
+            <span class="typing-dots">
+                <span></span><span></span><span></span>
+            </span>
+    Escribiendo...
+  </div>
+
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="Escribe tu mensaje aquí..." autocomplete="off">
+    <button class="send-button" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  // === CONFIGURACIÓN SIMPLIFICADA DE API ===
+  const INTERNAL_API = 'http://192.168.10.115:5678';
+  const EXTERNAL_API = 'http://200.60.99.116:5678';
+
+  let RESOLVED_API = null;
+  let API_DETECTION_COMPLETE = false;
+
+  function pickApiUrl() {
+    if (RESOLVED_API) return RESOLVED_API;
+
+    console.log('Determinando API basado en red...');
+
+    // Detectar si estamos en red local (192.168.*)
+    const isInternalNetwork = window.location.hostname.startsWith('192.168.');
+
+    RESOLVED_API = isInternalNetwork ? INTERNAL_API : EXTERNAL_API;
+    API_DETECTION_COMPLETE = true;
+
+    console.log(`Red ${isInternalNetwork ? 'interna' : 'externa'}, usando API:`, RESOLVED_API);
+    updateStatusIndicator(true, `Conectado: ${isInternalNetwork ? 'LAN' : 'WAN'}`);
+
+    return RESOLVED_API;
+  }
+
+  async function apiFetch(path, options = {}, timeoutMs = 700000) {
+    const base = pickApiUrl(); // Ahora es síncrono
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(base + path, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response;
+
+    } catch (error) {
+      console.error('Error en apiFetch:', error);
+      if (error.name === 'AbortError') {
+        throw new Error('Timeout: La solicitud tardó demasiado tiempo');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  function updateStatusIndicator(connected, message) {
+    const statusDot = document.querySelector('.status-dot');
+    const statusText = document.querySelector('.status-indicator span');
+
+    if (connected) {
+      statusDot.style.backgroundColor = '#10b981';
+      statusText.textContent = message || 'En línea';
+    } else {
+      statusDot.style.backgroundColor = '#ef4444';
+      statusText.textContent = message || 'Sin conexión';
+    }
+  }
+
+  // Variables globales
+  const chatbox = document.getElementById('chatbox');
+  const typingIndicator = document.getElementById('typingIndicator');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+
+  let conversationHistory = [];
+  let isWaitingForResponse = false;
+  let isTalkIAActive = true;
+  let currentMetadata = {};
+  let sessionId = generateSessionId();
+  let messageCount = 0;
+
+  const WEBHOOK_SUFFIX = 'webhook';
+
+  // Genera un ID único de sesión
+  function generateSessionId() {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  // Agrega un mensaje al chat
+  function appendMessage(sender, text) {
+    const welcomeMsg = document.querySelector('.welcome-message');
+    if (welcomeMsg) welcomeMsg.remove();
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${sender}-message`;
+    msgDiv.setAttribute('data-message-id', messageCount++);
+
+    const textDiv = document.createElement('div');
+    if (typeof marked !== 'undefined') {
+      textDiv.innerHTML = marked.parse(text);
+    } else {
+      textDiv.innerHTML = text.replace(/\n/g, '<br>');
+    }
+    msgDiv.appendChild(textDiv);
+
+    const timestamp = document.createElement('div');
+    timestamp.className = 'timestamp';
+    timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    msgDiv.appendChild(timestamp);
+
+    chatbox.appendChild(msgDiv);
+    scrollToBottom();
+  }
+
+  // Desplaza el chat hacia abajo
+  function scrollToBottom() {
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+  // Muestra el indicador de escritura
+  function showTypingIndicator() {
+    typingIndicator.style.display = 'block';
+    scrollToBottom();
+  }
+
+  // Oculta el indicador de escritura
+  function hideTypingIndicator() {
+    typingIndicator.style.display = 'none';
+  }
+
+  // Habilita/deshabilita la interfaz de entrada
+  function toggleInputState(disabled) {
+    isWaitingForResponse = disabled;
+    userInput.disabled = disabled;
+    sendBtn.disabled = disabled;
+
+    if (disabled) {
+      sendBtn.style.opacity = '0.6';
+      sendBtn.style.cursor = 'not-allowed';
+    } else {
+      sendBtn.style.opacity = '1';
+      sendBtn.style.cursor = 'pointer';
+    }
+  }
+
+  // Envía un mensaje
+  async function sendMessage() {
+    if (isWaitingForResponse) return;
+
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    appendMessage('user', message);
+    userInput.value = '';
+
+    toggleInputState(true);
+    showTypingIndicator();
+
+    try {
+      // 1. Preparar el payload con el historial de conversación ACTUAL.
+      const payload = {
+        sessionId: sessionId,
+        metadata: {
+          feedback: message,
+          memoria: conversationHistory,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      console.log('Enviando payload con memoria:', payload);
+      console.log('Usando API:', RESOLVED_API);
+
+      // 2. Realizar la petición usando apiFetch
+      const response = await apiFetch(`/${WEBHOOK_SUFFIX}/chatbot`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      // 3. Procesar la respuesta del backend.
+      const responseData = await response.json();
+      console.log('Respuesta recibida:', responseData);
+
+      hideTypingIndicator();
+
+      // Verificamos que la respuesta sea un array y que no esté vacío
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        const data = responseData[0];
+
+        if (data.reply) {
+          appendMessage('bot', data.reply);
+
+          // Actualizamos nuestro historial con el que nos devuelve n8n.
+          conversationHistory = data.memoria || [];
+          console.log('Memoria actualizada:', conversationHistory);
+
+        } else {
+          appendMessage('bot', 'La respuesta del servidor no tiene el formato esperado.');
+        }
+      } else {
+        appendMessage('bot', 'No se recibió una respuesta válida.');
+      }
+
+    } catch (error) {
+      console.error('Error en sendMessage:', error);
+      hideTypingIndicator();
+
+      if (error.message.includes('Timeout')) {
+        appendMessage('bot', '⏰ Timeout: El servidor tardó demasiado en responder.');
+      } else {
+        appendMessage('bot', '❌ Error de conexión: ' + error.message);
+      }
+    } finally {
+      toggleInputState(false);
+      userInput.focus();
+    }
+  }
+
+  // Event listeners
+  userInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Auto-focus en el input
+  userInput.addEventListener('blur', () => {
+    setTimeout(() => userInput.focus(), 100);
+  });
+
+  // Inicialización
+  window.addEventListener('load', () => {
+    console.log('Chat inicializado');
+    console.log('Session ID:', sessionId);
+    console.log('TalkIA activo:', isTalkIAActive);
+
+    // Determinar API inmediatamente
+    pickApiUrl();
+
+    userInput.focus();
+
+    console.log('Configuración del chat:');
+    console.log('- Webhook suffix:', WEBHOOK_SUFFIX);
+    console.log('- API seleccionada:', RESOLVED_API);
+    console.log('- Metadata inicial:', currentMetadata);
+  });
+
+  // Manejo de errores globales
+  window.addEventListener('error', (e) => {
+    console.error('Error global:', e.error);
+  });
+
+  // Función para limpiar chat (opcional, para testing)
+  function clearChat() {
+    chatbox.innerHTML = `
+                <div class="welcome-message">
+                    <p>👋 ¡Hola! Soy tu asistente IA. Puedo mantener conversaciones naturales y recordar el contexto de nuestra charla.</p>
+                    <p style="margin-top: 10px; font-size: 0.9em;">Escribe cualquier cosa para comenzar...</p>
+                </div>
+            `;
+    currentMetadata = {};
+    messageCount = 0;
+    sessionId = generateSessionId();
+    console.log('Chat limpiado. Nuevo Session ID:', sessionId);
+  }
+
+  // Exportar funciones para debug (opcional)
+  window.chatDebug = {
+    clearChat,
+    currentMetadata: () => currentMetadata,
+    sessionId: () => sessionId,
+    messageCount: () => messageCount,
+    resolvedApi: () => RESOLVED_API,
+    manualApiOverride: (url) => {
+      RESOLVED_API = url;
+      API_DETECTION_COMPLETE = true;
+      updateStatusIndicator(true, `Manual: ${url.split('//')[1]}`);
+      console.log('API manual establecida:', url);
+    },
+    // Función para mostrar información de red
+    networkInfo: () => {
+      return {
+        hostname: window.location.hostname,
+        isInternal: window.location.hostname.startsWith('192.168.'),
+        selectedApi: RESOLVED_API
+      };
+    }
+  };
+</script>
+</body>
+</html>

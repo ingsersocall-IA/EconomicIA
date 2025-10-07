@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registrarse</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-950 flex items-center justify-center min-h-screen antialiased">
+<div class="w-full max-w-sm p-6">
+  <div class="bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
+    <h1 class="text-xl font-semibold mb-1 text-center text-gray-900 dark:text-gray-100">Crear cuenta</h1>
+    <p class="text-center text-xs text-gray-500 dark:text-gray-400 mb-6">Bienvenido/a al Agente IA</p>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="mb-3 px-3 py-2 text-sm rounded-lg bg-{% if message.tags == 'error' %}red{% else %}green{% endif %}-100 text-{% if message.tags == 'error' %}red{% else %}green{% endif %}-800">
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="id_username" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Usuario</label>
+        <input type="text" name="username" id="id_username"
+               class="mt-1 w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+               required>
+        {{ form.username.errors }}
+      </div>
+      <div>
+        <label for="id_password1" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Contraseña</label>
+        <input type="password" name="password1" id="id_password1"
+               class="mt-1 w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+               required>
+        {{ form.password1.errors }}
+      </div>
+      <div>
+        <label for="id_password2" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Confirmar contraseña</label>
+        <input type="password" name="password2" id="id_password2"
+               class="mt-1 w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+               required>
+        {{ form.password2.errors }}
+      </div>
+
+      <div class="pt-2 flex items-center justify-between">
+        <button type="submit" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white">Registrarse</button>
+        <a href="{% url 'login' %}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">¿Ya tienes cuenta? Inicia sesión</a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot COOPOLO</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .chat-container { width: 100%; max-width: 500px; background-color: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
+        .chat-header { background: linear-gradient(to right, #4A00E0, #8E2DE2); color: white; padding: 20px; text-align: center; position: relative; }
+        .chat-header h1 { font-size: 1.8rem; margin-bottom: 5px; }
+        .chat-header p { font-size: 0.9rem; opacity: 0.9; }
+        .status-indicator { position: absolute; top: 20px; right: 20px; display: flex; align-items: center; font-size: 0.8rem; }
+        .status-dot { width: 10px; height: 10px; background-color: #4CAF50; border-radius: 50%; margin-right: 5px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%{opacity:1;}50%{opacity:0.4;}100%{opacity:1;} }
+
+        #chatbox { flex: 1; padding: 15px; overflow-y: auto; background-color: #f9f9f9; display: flex; flex-direction: column; }
+
+        .message { max-width: 85%; padding: 12px 15px; margin-bottom: 12px; border-radius: 18px; position: relative; animation: fadeIn 0.3s ease; word-wrap: break-word; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+        .user-message { align-self: flex-end; background: linear-gradient(to right, #2193b0, #6dd5ed); color: white; border-bottom-right-radius: 5px; }
+        .bot-message { align-self: flex-start; background-color: #e9ecef; color: #333; border-bottom-left-radius: 5px; }
+
+        .menu-container { background-color: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin: 5px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .menu-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #333; text-align: center; }
+
+        .option-button {
+            display: block;
+            width: 100%;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            color: #333;
+        }
+        .option-button:hover {
+            background-color: #f0f8ff;
+            border-color: #4A00E0;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(74,0,224,0.1);
+        }
+        .option-button:last-child { margin-bottom: 0; }
+
+        .navigation-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .nav-button {
+            background: linear-gradient(45deg, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .nav-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .back-button { background: linear-gradient(45deg, #dc3545, #c82333); }
+        .home-button { background: linear-gradient(45deg, #28a745, #218838); }
+        .talk-button {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+            flex: 1;
+            justify-content: center;
+        }
+
+        .breadcrumb {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .typing-indicator { display:none; align-self:flex-start; background-color:#e9ecef; padding:12px 15px; border-radius:18px; margin-bottom:15px; font-style:italic; color:#666; }
+        .typing-dots span { display:inline-block; width:6px; height:6px; background-color:#666; border-radius:50%; margin:0 2px; animation:typing 1.4s infinite; }
+        @keyframes typing { 0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);} }
+
+        .input-area { padding: 15px; background-color: white; border-top: 1px solid #eee; display: none; }
+        .input-container { display: flex; gap: 10px; }
+        #userInput { flex:1; padding:12px 15px; border:1px solid #ddd; border-radius:25px; font-size:1rem; outline:none; transition:border 0.3s; }
+        #userInput:focus { border-color:#8E2DE2; box-shadow:0 0 0 2px rgba(142,45,226,0.2); }
+        .send-button { background: linear-gradient(to right, #4A00E0, #8E2DE2); color:white; border:none; width:50px; height:50px; border-radius:50%; cursor:pointer; font-size:1.2rem; display:flex; justify-content:center; align-items:center; transition:all 0.3s ease; box-shadow:0 3px 6px rgba(0,0,0,0.1); }
+        .send-button:hover { transform:scale(1.05); box-shadow:0 5px 10px rgba(0,0,0,0.15); }
+
+        .timestamp { font-size:0.7rem; opacity:0.7; margin-top:5px; text-align:right; }
+
+        .subcategory-header {
+            background: linear-gradient(45deg, #8E2DE2, #4A00E0);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        @media (max-width:600px) {
+            .chat-container { height:95vh; max-width:100%; margin: 10px; }
+            .navigation-controls { flex-direction: column; }
+            .talk-button { flex: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>Asistente COOPOLO</h1>
+        <p>Menú de navegación y asistente conversacional</p>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Conectado</span>
+        </div>
+    </div>
+
+    <div id="chatbox"></div>
+
+    <div class="typing-indicator" id="typingIndicator">
+        <span class="typing-dots"><span></span><span></span><span></span></span>Escribiendo...
+    </div>
+
+    <div class="input-area" id="inputArea">
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Escribe tu mensaje..." autocomplete="off">
+            <button class="send-button" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    // Datos del menú
+    const menuData = {
+        "menu_navegacion": [
+            {
+                "name": "Estado de Cuenta",
+                "type": "link",
+                "url": "/estado-de-cuenta"
+            },
+            {
+                "name": "Servicios Virtuales",
+                "items": [
+                    {
+                        "name": "Prestamos",
+                        "type": "submenu",
+                        "sub_items": [
+                            { "name": "Cubierto", "type": "link", "url": "/prestamos/cubierto" },
+                            { "name": "Ordinario", "type": "link", "url": "/prestamos/ordinario" },
+                            { "name": "Credifacil", "type": "link", "url": "/prestamos/credifacil" },
+                            { "name": "Educativo", "type": "link", "url": "/prestamos/educativo" },
+                            { "name": "Pyme", "type": "link", "url": "/prestamos/pyme" },
+                            { "name": "Vehicular", "type": "link", "url": "/prestamos/vehicular" },
+                            { "name": "Campañas", "type": "link", "url": "/prestamos/campañas" },
+                            { "name": "Reactiva", "type": "link", "url": "/prestamos/reactiva" }
+                        ]
+                    },
+                    { "name": "Pagos", "type": "link", "url": "/pagos" },
+                    { "name": "Prevision Social", "type": "link", "url": "/prevision-social" },
+                    {
+                        "name": "Atencion Social",
+                        "type": "submenu",
+                        "sub_items": [
+                            { "name": "Constancia de no adeudo", "type": "link", "url": "/atencion-social/constancia-no-adeudo" },
+                            { "name": "Devolucion Dcto indebido", "type": "link", "url": "/atencion-social/devolucion-indebido" },
+                            { "name": "Renuncia", "type": "link", "url": "/atencion-social/renuncia" }
+                        ]
+                    },
+                    { "name": "Reclamos", "type": "link", "url": "/reclamos" }
+                ]
+            },
+            { "name": "Afiliacion", "type": "link", "url": "/afiliacion" }
+        ],
+        "preguntas_frecuentes": {
+            "categories": [
+                {
+                    "name": "Afiliación (Ser socio)",
+                    "subcategories": [
+                        {
+                            "name": "Requisitos de afiliación",
+                            "items": []
+                        },
+                        {
+                            "name": "Proceso de afiliación",
+                            "items": [
+                                { "id": "1", "question": "¿Cómo puedo ser socio?", "confidence": 0.9 }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Aportes y Estado de Cuenta",
+                    "subcategories": [
+                        {
+                            "name": "Cuotas asociativas",
+                            "items": [
+                                { "id": "2", "question": "¿Cuál es el monto de aporte mensual?", "confidence": 0.9 },
+                                { "id": "3", "question": "¿Cuánto es la cuota que debo pagar mensualmente?", "confidence": 0.95 }
+                            ]
+                        },
+                        {
+                            "name": "Estado de cuenta e información",
+                            "items": [
+                                { "id": "4", "question": "¿Cómo veo mi estado de cuenta?", "confidence": 0.95 },
+                                { "id": "5", "question": "¿Cuánto dinero tengo en mis aportes?", "confidence": 0.95 }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Créditos y Préstamos",
+                    "subcategories": [
+                        {
+                            "name": "Requisitos para créditos",
+                            "items": [
+                                { "id": "6", "question": "¿Qué necesito para un crédito personal?", "confidence": 0.9 }
+                            ]
+                        },
+                        {
+                            "name": "Tipos de crédito",
+                            "items": [
+                                { "id": "7", "question": "¿Qué tipos de créditos ofrece COOPOLO?", "confidence": 0.95 }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    };
+
+    // Variables de estado
+    let navigationHistory = [];
+    let currentView = 'main';
+    let isConversationalMode = false;
+    let isWaitingForResponse = false;
+    let sessionId = generateSessionId();
+
+    function generateSessionId() {
+        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+    }
+
+    // Funciones de navegación
+    function showMainMenu() {
+        currentView = 'main';
+        navigationHistory = [];
+
+        const menuContainer = createMenuContainer();
+        menuContainer.innerHTML = `
+            <div class="menu-title">🏠 Menú Principal</div>
+            <div class="navigation-controls">
+                <button class="nav-button talk-button" onclick="activateConversationalMode()">
+                    💬 Modo Conversacional
+                </button>
+            </div>
+            <button class="option-button" onclick="showNavigationMenu()">
+                📋 Navegación Principal
+            </button>
+            <button class="option-button" onclick="showFAQCategories()">
+                ❓ Preguntas Frecuentes
+            </button>
+        `;
+
+        replaceLastBotMessage(menuContainer);
+    }
+
+    function showNavigationMenu() {
+        currentView = 'navigation';
+        navigationHistory = ['main'];
+
+        const menuContainer = createMenuContainer();
+        menuContainer.innerHTML = `
+            <div class="breadcrumb">Inicio > Navegación Principal</div>
+            <div class="menu-title">📋 Navegación Principal</div>
+            ${createNavigationControls()}
+        `;
+
+        menuData.menu_navegacion.forEach(item => {
+            const button = document.createElement('button');
+            button.className = 'option-button';
+            button.textContent = `📄 ${item.name}`;
+
+            if (item.items) {
+                button.onclick = () => showSubmenu(item.name, item.items, 'navigation');
+            } else {
+                button.onclick = () => handleMenuAction(item.name, item.url);
+            }
+
+            menuContainer.appendChild(button);
+        });
+
+        replaceLastBotMessage(menuContainer);
+    }
+
+    function showFAQCategories() {
+        currentView = 'faq';
+        navigationHistory = ['main'];
+
+        const menuContainer = createMenuContainer();
+        menuContainer.innerHTML = `
+            <div class="breadcrumb">Inicio > Preguntas Frecuentes</div>
+            <div class="menu-title">❓ Preguntas Frecuentes</div>
+            ${createNavigationControls()}
+        `;
+
+        menuData.preguntas_frecuentes.categories.forEach(category => {
+            const button = document.createElement('button');
+            button.className = 'option-button';
+            button.textContent = `📁 ${category.name}`;
+            button.onclick = () => showFAQSubcategories(category.name, category.subcategories);
+            menuContainer.appendChild(button);
+        });
+
+        replaceLastBotMessage(menuContainer);
+    }
+
+    function showSubmenu(parentName, items, parentType) {
+        navigationHistory.push(currentView);
+        currentView = `submenu_${parentName}`;
+
+        const menuContainer = createMenuContainer();
+        const breadcrumbPath = getBreadcrumbPath(parentName);
+
+        menuContainer.innerHTML = `
+            <div class="breadcrumb">${breadcrumbPath}</div>
+            <div class="menu-title">📂 ${parentName}</div>
+            ${createNavigationControls()}
+        `;
+
+        items.forEach(item => {
+            const button = document.createElement('button');
+            button.className = 'option-button';
+
+            if (item.sub_items) {
+                button.textContent = `📁 ${item.name}`;
+                button.onclick = () => showSubSubmenu(item.name, item.sub_items, parentName);
+            } else {
+                button.textContent = `📄 ${item.name}`;
+                button.onclick = () => handleMenuAction(item.name, item.url);
+            }
+
+            menuContainer.appendChild(button);
+        });
+
+        replaceLastBotMessage(menuContainer);
+    }
+
+    function showSubSubmenu(parentName, items, grandParentName) {
+        navigationHistory.push(currentView);
+        currentView = `subsubmenu_${parentName}`;
+
+        const menuContainer = createMenuContainer();
+        const breadcrumbPath = getBreadcrumbPath(grandParentName, parentName);
+
+        menuContainer.innerHTML = `
+            <div class="breadcrumb">${breadcrumbPath}</div>
+            <div class="subcategory-header">${parentName}</div>
+            ${createNavigationControls()}
+        `;
+
+        items.forEach(item => {
+            const button = document.createElement('button');
+            button.className = 'option-button';
+            button.textContent = `📄 ${item.name}`;
+            button.onclick = () => handleMenuAction(item.name, item.url);
+            menuContainer.appendChild(button);
+        });
+
+        replaceLastBotMessage(menuContainer);
+    }
+
+    function showFAQSubcategories(categoryName, subcategories) {
+        navigationHistory.push(currentView);
+        currentView = `faq_${categoryName}`;
+
+        const menuContainer = createMenuContainer();
+        menuContainer.innerHTML = `
+            <div class="breadcrumb">Inicio > Preguntas Frecuentes > ${categoryName}</div>
+            <div class="subcategory-header">${categoryName}</div>
+            ${createNavigationControls()}
+        `;
+
+        subcategories.forEach(subcategory => {
+            if (subcategory.items.length > 0) {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.textContent = `📁 ${subcategory.name} (${subcategory.items.length})`;
+                button.onclick = () => showFAQQuestions(subcategory.name, subcategory.items, categoryName);
+                menuContainer.appendChild(button);
+            }
+        });
+
+        replaceLastBotMessage(menuContainer);
+    }
+
+    function showFAQQuestions(subcategoryName, questions, categoryName) {
+        navigationHistory.push(currentView);
+        currentView = `faq_questions_${subcategoryName}`;
+
+        const menuContainer = createMenuContainer();
+        menuContainer.innerHTML = `
+            <div class="breadcrumb">Inicio > FAQ > ${categoryName} > ${subcategoryName}</div>
+            <div class="subcategory-header">${subcategoryName}</div>
+            ${createNavigationControls()}
+        `;
+
+        questions.forEach(item => {
+            const button = document.createElement('button');
+            button.className = 'option-button';
+            button.textContent = `❓ ${item.question}`;
+            button.onclick = () => handleQuestionClick(item.question, item.id);
+            menuContainer.appendChild(button);
+        });
+
+        replaceLastBotMessage(menuContainer);
+    }
+
+    // Funciones auxiliares
+    function createMenuContainer() {
+        const container = document.createElement('div');
+        container.className = 'menu-container';
+        return container;
+    }
+
+    function createNavigationControls() {
+        const canGoBack = navigationHistory.length > 0;
+
+        return `
+            <div class="navigation-controls">
+                ${canGoBack ? '<button class="nav-button back-button" onclick="goBack()">⬅️ Atrás</button>' : ''}
+                <button class="nav-button home-button" onclick="showMainMenu()">🏠 Inicio</button>
+                <button class="nav-button talk-button" onclick="activateConversationalMode()">💬 Conversar</button>
+            </div>
+        `;
+    }
+
+    function getBreadcrumbPath(...parts) {
+        const basePath = currentView.includes('faq') ? 'Inicio > Preguntas Frecuentes' : 'Inicio > Navegación Principal';
+        const fullParts = parts.filter(p => p);
+        return fullParts.length > 0 ? `${basePath} > ${fullParts.join(' > ')}` : basePath;
+    }
+
+    function goBack() {
+        if (navigationHistory.length === 0) return;
+
+        const previousView = navigationHistory.pop();
+        currentView = previousView;
+
+        // Reconstruir la vista anterior
+        switch (previousView) {
+            case 'main':
+                showMainMenu();
+                break;
+            case 'navigation':
+                showNavigationMenu();
+                break;
+            case 'faq':
+                showFAQCategories();
+                break;
+            default:
+                if (previousView.startsWith('faq_')) {
+                    const parts = previousView.split('_');
+                    if (parts.length === 2) {
+                        const category = menuData.preguntas_frecuentes.categories.find(c => c.name === parts[1]);
+                        if (category) showFAQSubcategories(category.name, category.subcategories);
+                    }
+                } else if (previousView.startsWith('submenu_')) {
+                    const menuName = previousView.replace('submenu_', '');
+                    const menuItem = menuData.menu_navegacion.find(item => item.name === menuName);
+                    if (menuItem) showSubmenu(menuItem.name, menuItem.items, 'navigation');
+                }
+                break;
+        }
+    }
+
+    function replaceLastBotMessage(newContent) {
+        const messages = chatbox.querySelectorAll('.message');
+        const lastBotMessage = Array.from(messages).reverse().find(msg => msg.classList.contains('bot-message'));
+
+        if (lastBotMessage) {
+            lastBotMessage.replaceWith(newContent);
+        } else {
+            chatbox.appendChild(newContent);
+        }
+
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function activateConversationalMode() {
+        isConversationalMode = true;
+        document.getElementById('inputArea').style.display = 'block';
+
+        appendMessage('bot', '💬 **Modo conversacional activado**\n\nAhora puedes escribir libremente tus preguntas. También puedes usar los botones del menú para navegar rápidamente.');
+    }
+
+    function handleMenuAction(name, url) {
+        appendMessage('user', `Seleccioné: ${name}`);
+
+        // Simular respuesta del sistema
+        setTimeout(() => {
+            appendMessage('bot', `✅ Has seleccionado **${name}**.\n\nEn una implementación completa, esto te llevaría a: \`${url}\`\n\n¿Te gustaría hacer algo más?`);
+
+            // Mostrar menú de navegación rápida después de la acción
+            const quickMenu = createMenuContainer();
+            quickMenu.innerHTML = `
+                <div class="menu-title">¿Qué te gustaría hacer ahora?</div>
+                <div class="navigation-controls">
+                    <button class="nav-button home-button" onclick="showMainMenu()">🏠 Menú Principal</button>
+                    <button class="nav-button talk-button" onclick="activateConversationalMode()">💬 Conversar</button>
+                </div>
+            `;
+            chatbox.appendChild(quickMenu);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }, 500);
+    }
+
+    function handleQuestionClick(question, id) {
+        appendMessage('user', question);
+
+        // Simular respuesta del sistema
+        setTimeout(() => {
+            appendMessage('bot', `📝 **Pregunta**: ${question}\n\nEn una implementación completa, aquí mostraría la respuesta detallada asociada al ID: \`${id}\`\n\n¿Te fue útil esta información?`);
+
+            // Mostrar menú de navegación rápida
+            const quickMenu = createMenuContainer();
+            quickMenu.innerHTML = `
+                <div class="menu-title">¿Necesitas algo más?</div>
+                <div class="navigation-controls">
+                    <button class="nav-button back-button" onclick="goBack()">⬅️ Más preguntas</button>
+                    <button class="nav-button home-button" onclick="showMainMenu()">🏠 Inicio</button>
+                    <button class="nav-button talk-button" onclick="activateConversationalMode()">💬 Conversar</button>
+                </div>
+            `;
+            chatbox.appendChild(quickMenu);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }, 500);
+    }
+
+    function appendMessage(sender, text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}-message`;
+
+        const txt = document.createElement('div');
+        txt.innerHTML = marked.parse(typeof text === 'string' ? text : text.toString());
+        msgDiv.appendChild(txt);
+
+        const ts = document.createElement('div');
+        ts.className = 'timestamp';
+        ts.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        msgDiv.appendChild(ts);
+
+        chatbox.appendChild(msgDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function sendMessage() {
+        if (!isConversationalMode || isWaitingForResponse) return;
+
+        const input = document.getElementById('userInput');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        appendMessage('user', msg);
+        input.value = '';
+        showTypingIndicator();
+        isWaitingForResponse = true;
+
+        // Simular respuesta del chatbot
+        setTimeout(() => {
+            hideTypingIndicator();
+            isWaitingForResponse = false;
+
+            const response = `Entiendo tu consulta: "${msg}"\n\nEn una implementación completa, procesaría tu mensaje y te daría una respuesta personalizada.\n\n¿Hay algo específico en lo que pueda ayudarte del menú?`;
+            appendMessage('bot', response);
+
+            // Agregar menú de navegación rápida
+            const quickMenu = createMenuContainer();
+            quickMenu.innerHTML = `
+                <div class="navigation-controls">
+                    <button class="nav-button home-button" onclick="showMainMenu()">🏠 Ver Menú</button>
+                    <button class="nav-button" onclick="showFAQCategories()">❓ Preguntas Frecuentes</button>
+                </div>
+            `;
+            chatbox.appendChild(quickMenu);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }, 1000 + Math.random() * 1000);
+    }
+
+    function showTypingIndicator() {
+        document.getElementById('typingIndicator').style.display = 'block';
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        document.getElementById('typingIndicator').style.display = 'none';
+    }
+
+    // Event listeners
+    document.getElementById('userInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // Inicialización
+    window.onload = function() {
+        appendMessage('bot', '¡Hola! Bienvenido al Asistente COOPOLO 👋');
+        showMainMenu();
+    };
+
+    // Variables globales
+    const chatbox = document.getElementById('chatbox');
+</script>
+</body>
+</html>

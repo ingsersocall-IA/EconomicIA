@@ -1,0 +1,61 @@
+<div class="group flex items-center gap-2 px-3 py-2 rounded-lg
+            hover:bg-gray-100 dark:hover:bg-gray-800
+            {% if conv.id == conversation.id %}bg-gray-100 dark:bg-gray-800 ring-1 ring-blue-500/20{% endif %}">
+
+    <!-- Título: más espacio y mejor truncado -->
+    <a href="{% url 'chat' conv.id %}"
+       class="flex-1 min-w-0 pr-3 text-sm text-gray-900 dark:text-gray-100 overflow-hidden text-ellipsis whitespace-nowrap"
+       id="conversation-display-{{ conv.id }}">
+        {{ conv.title }}
+    </a>
+
+    <!-- Form de edición (intacto) -->
+    <form id="conversation-edit-form-{{ conv.id }}" action="{% url 'edit_conversation' conv.id %}"
+          method="post" class="hidden flex-1 pr-2">
+        {% csrf_token %}
+        <input type="text" name="new_conversation_title" value="{{ conv.title }}"
+               class="w-full text-sm bg-gray-100 dark:bg-gray-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </form>
+
+    <!-- Acciones: compactas; “Mover…” se expande al abrir -->
+    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <button onclick="toggleEdit('conversation', {{ conv.id }})"
+                class="p-1 hover:text-blue-600" title="Editar título">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"/>
+            </svg>
+        </button>
+
+        <!-- Mover: solo “Mover…” visible; al enfocar se ensancha -->
+        <form action="{% url 'move_conversation_to_folder' conv.id %}" method="post" class="inline relative">
+            {% csrf_token %}
+            <select name="folder_id" onchange="this.form.submit()"
+                    class="expand-on-focus w-16 text-xs bg-transparent border-none focus:ring-0 cursor-pointer
+                 transition-[width] duration-150 ease-out pr-5 rounded [appearance:none]
+                 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    data-expand-class="!w-56"
+                    title="Mover a carpeta">
+                <option value="">Mover…</option>
+                {% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
+                <option value="none">Sacar de carpeta</option>
+            </select>
+
+            <!-- Chevron decorativo -->
+            <svg class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500"
+                 viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.4a.75.75 0 01-1.08 0l-4.24-4.4a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+            </svg>
+        </form>
+
+        <form action="{% url 'delete_conversation' conv.id %}" method="post"
+              onsubmit="return confirm('¿Eliminar esta conversación?');" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="p-1 text-red-600 hover:text-red-700" title="Eliminar">
+                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2zM9 9h2v10H9V9zm4 0h2v10h-2V9z"/>
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interactivo con n8n</title>
+    <style>
+        .message table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .message th, .message td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .message th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .message tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .message div, .message p, .message ul, .message li, .message em {
+            white-space: normal;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .message ul {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+        .message li {
+            margin-bottom: 5px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .chat-container { width: 100%; max-width: 500px; background-color: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; }
+        .chat-header { background: linear-gradient(to right, #4A00E0, #8E2DE2); color: white; padding: 20px; text-align: center; position: relative; }
+        .chat-header h1 { font-size: 1.8rem; margin-bottom: 5px; }
+        .chat-header p { font-size: 0.9rem; opacity: 0.9; }
+        .status-indicator { position: absolute; top: 20px; right: 20px; display: flex; align-items: center; font-size: 0.8rem; }
+        .status-dot { width: 10px; height: 10px; background-color: #4CAF50; border-radius: 50%; margin-right: 5px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%{opacity:1;}50%{opacity:0.4;}100%{opacity:1;} }
+        #chatbox { height: 400px; padding: 20px; overflow-y: auto; background-color: #f9f9f9; display: flex; flex-direction: column; }
+        .message { max-width: 80%; padding: 12px 15px; margin-bottom: 15px; border-radius: 18px; position: relative; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+        .user-message { align-self: flex-end; background: linear-gradient(to right, #2193b0, #6dd5ed); color: white; border-bottom-right-radius: 5px; }
+        .bot-message { align-self: flex-start; background-color: #e9ecef; color: #333; border-bottom-left-radius: 5px; }
+        .bot-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .action-button { background: linear-gradient(to right, #8E2DE2, #4A00E0); color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+        .action-button:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.15); }
+        .action-button:active { transform: translateY(0); }
+        .input-area { padding: 15px; background-color: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        #userInput { flex:1; padding:12px 15px; border:1px solid #ddd; border-radius:25px; font-size:1rem; outline:none; transition:border 0.3s; }
+        #userInput:focus { border-color:#8E2DE2; box-shadow:0 0 0 2px rgba(142,45,226,0.2); }
+        .send-button { background: linear-gradient(to right, #4A00E0, #8E2DE2); color:white; border:none; width:50px; height:50px; border-radius:50%; cursor:pointer; font-size:1.2rem; display:flex; justify-content:center; align-items:center; transition:all 0.3s ease; box-shadow:0 3px 6px rgba(0,0,0,0.1); }
+        .send-button:hover { transform:scale(1.05); box-shadow:0 5px 10px rgba(0,0,0,0.15); }
+        .typing-indicator { display:none; align-self:flex-start; background-color:#e9ecef; padding:12px 15px; border-radius:18px; margin-bottom:15px; font-style:italic; color:#666; }
+        .typing-dots span { display:inline-block; width:6px; height:6px; background-color:#666; border-radius:50%; margin:0 2px; animation:typing 1.4s infinite; }
+        @keyframes typing { 0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);} }
+        .instructions { text-align:center; padding:15px; font-size:0.85rem; color:#666; background-color:#f5f5f5; border-top:1px solid #eee; }
+        .timestamp { font-size:0.7rem; opacity:0.7; margin-top:5px; text-align:right; }
+        @media (max-width:600px) { .chat-container { height:90vh; max-width:100%; } #chatbox { height:calc(100% - 170px); } }
+    </style>
+</head>
+<div id="imageModal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); justify-content:center; align-items:center;">
+    <span id="closeModal" style="position:absolute; top:20px; right:40px; font-size:30px; color:#fff; cursor:pointer;">&times;</span>
+    <img id="modalImage" style="max-width:90%; max-height:90%;">
+    <div id="modalCaption" style="color:white; text-align:center; margin-top:10px;"></div>
+</div>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>Asistente Virtual</h1>
+        <p>Conectado a n8n - Respuestas interactivas</p>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Conectado</span>
+        </div>
+    </div>
+
+    <div id="chatbox">
+
+    </div>
+    <div class="typing-indicator" id="typingIndicator"><span class="typing-dots"><span></span><span></span><span></span></span>Escribiendo...</div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Escribe tu mensaje..." autocomplete="off">
+        <button class="send-button" onclick="sendMessage()">➤</button>
+    </div>
+    <div class="instructions">También puedes seleccionar las opciones que aparecen como botones</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+    const chatbox = document.getElementById('chatbox');
+    const typingIndicator = document.getElementById('typingIndicator');
+    let isWaitingForResponse = false;
+    let isTalkIAActive = false;
+    let currentMetadata = {};
+    let sessionId = generateSessionId();
+    const WEBHOOK_SUFFIX = 'webhook';
+    function generateSessionId() {
+        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+    }
+
+    function appendMessage(sender, text, actions = null, metadata = {}) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}-message`;
+
+        // Texto principal
+        const txt = document.createElement('div');
+        txt.innerHTML = marked.parse(typeof text === 'string' ? text : text.label || text);
+        msgDiv.appendChild(txt);
+
+        // 📸 Mostrar imágenes si existen en metadata.rutas.png
+        if (Array.isArray(metadata.RutasPNG) && metadata.RutasPNG.length > 0) {
+            const imgContainer = document.createElement('div');
+            imgContainer.style.marginTop = '12px';
+
+            metadata.RutasPNG.forEach(path => {
+                const fileName = path.split('/').pop(); // Usa '/' para rutas UNIX-like
+                const title = document.createElement('div');
+                title.textContent = fileName;
+                title.style.fontWeight = 'bold';
+                title.style.fontSize = '13px';
+                title.style.marginBottom = '4px';
+
+                const img = document.createElement('img');
+                img.src = `/${path}`;
+                img.alt = fileName;
+                img.style.maxWidth = '300px';
+                img.style.marginBottom = '12px';
+                img.style.borderRadius = '8px';
+                img.style.border = '1px solid #ccc';
+                img.style.cursor = 'pointer';
+
+                img.onclick = () => openModal(img.src, fileName);
+
+                imgContainer.appendChild(title);
+                imgContainer.appendChild(img);
+            });
+
+
+            msgDiv.appendChild(imgContainer);
+        }
+
+        // 📄 Mostrar enlaces de CSV si existen en metadata.rutas.csv
+        if (Array.isArray(metadata.RutasCSV) && metadata.RutasCSV.length > 0) {
+            const csvContainer = document.createElement('div');
+            csvContainer.style.marginTop = '12px';
+
+            metadata.RutasCSV.forEach(path => {
+                const fileName = path.split('\\').pop();
+
+                const csvLink = document.createElement('a');
+                csvLink.href = `/${path}`;
+                csvLink.target = '_blank';
+                csvLink.style.display = 'inline-block';
+                csvLink.style.marginRight = '12px';
+                csvLink.style.marginBottom = '6px';
+                csvLink.textContent = fileName;
+                csvLink.style.textDecoration = 'none';
+                csvLink.style.color = '#4A00E0';
+
+                csvContainer.appendChild(csvLink);
+            });
+
+            msgDiv.appendChild(csvContainer);
+        }
+
+
+        // 🔘 Botones de acción
+        if (actions) {
+            // Filtrar acciones visibles (excluye TalkIA)
+            const visibleActions = actions.filter(a => a.value !== 'TalkIA');
+
+            if (visibleActions.length > 0) {
+                const actDiv = document.createElement('div');
+                actDiv.className = 'bot-actions';
+
+                visibleActions.forEach(a => {
+                    const b = document.createElement('button');
+                    b.className = 'action-button';
+                    b.textContent = a.label;
+                    b.onclick = (e) => handleActionClick(a.value, a.metadata, e.target);
+                    actDiv.appendChild(b);
+                });
+
+                msgDiv.appendChild(actDiv);
+            }
+        }
+
+        // 🕓 Timestamp
+        const ts = document.createElement('div');
+        ts.className = 'timestamp';
+        ts.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        msgDiv.appendChild(ts);
+
+        // Agregar al chat
+        chatbox.appendChild(msgDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+    function openModal(src, caption) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const captionText = document.getElementById('modalCaption');
+        modal.style.display = 'flex';
+        modalImg.src = src;
+        captionText.textContent = caption;
+    }
+
+    document.getElementById('closeModal').onclick = function() {
+        document.getElementById('imageModal').style.display = 'none';
+    }
+
+    function showTypingIndicator(){ typingIndicator.style.display='block'; }
+    function hideTypingIndicator(){ typingIndicator.style.display='none'; }
+
+    function initConversation() {
+        // El menú inicial ya está insertado en el HTML estático, no se llama al webhook en test mode.
+    }
+
+    function handleActionClick(value, metadata, buttonElem) {
+        if (isWaitingForResponse) return;
+        isWaitingForResponse = true;
+
+        // Averiguamos el <div class="message"> que contiene el botón pulsado
+        const parentMsgDiv = buttonElem.closest('.message');
+
+        if (value === 'sendmsg') {
+            // Caso “Enviar Publicidad”: mostramos “Enviando…” en ese mismo div
+            if (parentMsgDiv) {
+                parentMsgDiv.innerHTML = '';
+                parentMsgDiv.className = 'message bot-message';
+                const sending = document.createElement('div');
+                sending.textContent = '⏳ Enviando…';
+            parentMsgDiv.appendChild(sending);
+        }
+
+        fetch(`http://localhost:5678/${WEBHOOK_SUFFIX}/chatbot`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: value, sessionId, metadata })
+        })
+            .then(response => {
+                hideTypingIndicator();
+                isWaitingForResponse = false;
+
+                if (response.status === 400) {
+                    // Al recibir 400, reemplazamos por “Mensaje enviado” y lo borramos a los 3s
+                    if (parentMsgDiv) {
+                        parentMsgDiv.innerHTML = '';
+                        parentMsgDiv.className = 'message bot-message';
+                        const done = document.createElement('div');
+                        done.textContent = '✅ Mensaje enviado, espere unos momentos...';
+                        parentMsgDiv.appendChild(done);
+
+                        setTimeout(() => {
+                            if (parentMsgDiv.parentNode === chatbox) {
+                                chatbox.removeChild(parentMsgDiv);
+                            }
+                        }, 3000);
+                    }
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data) return;
+                const replies = Array.isArray(data) ? data : [data];
+                replies.forEach(item => {
+                    appendMessage('bot', item.reply, item.actions);
+                });
+            })
+            .catch(() => {
+                hideTypingIndicator();
+                isWaitingForResponse = false;
+                appendMessage('bot', '❌ Error al procesar.');
+            });
+
+    } else if (value === 'TalkIA') {
+            isTalkIAActive = true;
+
+            // Mostrar mensaje de que puede seguir preguntando
+            appendMessage('bot', '✅ Puedes seguir preguntando sobre el análisis.');
+
+            // Guardamos el metadata para siguientes envíos
+            currentMetadata = metadata;
+
+            return; // No hace fetch aquí, solo cambia estado
+        }
+        else if (value === 'remakemsg') {
+        // Caso “Mejorar Publicidad”: reemplazamos contenido por “Escribe modificaciones” + input + flecha
+        let originalText = '';
+        const firstChild = parentMsgDiv.querySelector('div');
+        if (firstChild) {
+            originalText = firstChild.textContent;
+        }
+        if (parentMsgDiv) {
+            parentMsgDiv.innerHTML = '';
+            parentMsgDiv.className = 'message bot-message';
+
+            const textDiv = document.createElement('div');
+            textDiv.textContent = originalText;
+            parentMsgDiv.appendChild(textDiv);
+
+            // 2) Añadimos el prompt de “Escribe modificaciones:”
+            const promptDiv = document.createElement('div');
+            promptDiv.textContent = '✏️ Escribe modificaciones:';
+            promptDiv.style.marginTop = '8px';
+            parentMsgDiv.appendChild(promptDiv);
+
+            // Contenedor horizontal para el input y el botón flecha
+            const formDiv = document.createElement('div');
+            formDiv.style.display = 'flex';
+            formDiv.style.marginTop = '4px';
+
+            // Campo de texto
+            const inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.placeholder = 'Escribe aquí tus cambios...';
+            inputField.style.flex = '1';
+            inputField.style.padding = '8px';
+            inputField.style.border = '1px solid #ddd';
+            inputField.style.borderRadius = '20px';
+            inputField.style.outline = 'none';
+            inputField.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    sendRemake(); // Enviar con Enter igualmente
+                }
+            };
+            formDiv.appendChild(inputField);
+
+            // Botón de “flecha” para enviar
+            const sendButton = document.createElement('button');
+            sendButton.textContent = '➤';
+            sendButton.style.marginLeft = '8px';
+            sendButton.style.background = 'linear-gradient(to right, #4A00E0, #8E2DE2)';
+            sendButton.style.color = 'white';
+            sendButton.style.border = 'none';
+            sendButton.style.borderRadius = '50%';
+            sendButton.style.width = '40px';
+            sendButton.style.height = '40px';
+            sendButton.style.cursor = 'pointer';
+            sendButton.onclick = sendRemake;
+            formDiv.appendChild(sendButton);
+
+            parentMsgDiv.appendChild(formDiv);
+            inputField.focus();
+
+            // Función que se llama al pulsar flecha o Enter
+            function sendRemake() {
+                const userText = inputField.value.trim();
+                if (!userText) return;
+                // Cambiamos el input por “Enviando…” mientras esperamos
+                parentMsgDiv.innerHTML = '';
+                const sendingDiv = document.createElement('div');
+                sendingDiv.className = 'sending-placeholder';
+                sendingDiv.textContent = '⏳ Enviando cambios…';
+                parentMsgDiv.appendChild(sendingDiv);
+
+                // Llamada al webhook con action = 'respond' y campo 'respond' = userText
+                fetch(`http://localhost:5678/${WEBHOOK_SUFFIX}/MigraLey`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'remakemsg',
+                        sessionId,
+                        metadata,
+                        respond: userText
+                    })
+                })
+                    .then(response => {
+                        hideTypingIndicator();
+                        isWaitingForResponse = false;
+
+                        if (response.status === 400) {
+                            // En caso de 400, mensaje final y borrado
+                            parentMsgDiv.innerHTML = '';
+                            const done = document.createElement('div');
+                            done.textContent = '✅ Tus modificaciones fueron enviadas.';
+                            parentMsgDiv.appendChild(done);
+                            setTimeout(() => {
+                                if (parentMsgDiv.parentNode === chatbox) {
+                                    chatbox.removeChild(parentMsgDiv);
+                                }
+                            }, 3000);
+                            return null;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data) return;
+
+                        // data puede ser un array o un solo objeto
+                        const replies = Array.isArray(data) ? data : [data];
+
+                        // En lugar de eliminar sendingDiv, reemplazamos su contenido con la respuesta del bot
+                        sendingDiv.innerHTML = '';
+                        sendingDiv.className = 'bot-response';
+
+                        replies.forEach(item => {
+                            // Crear un <div> para el texto de la respuesta
+                            const replyTextDiv = document.createElement('div');
+                            replyTextDiv.textContent = item.reply;
+                            sendingDiv.appendChild(replyTextDiv);
+
+                            // Si existen acciones, las agregamos dentro de sendingDiv
+                            if (item.actions) {
+                                const actDiv = document.createElement('div');
+                                actDiv.className = 'bot-actions';
+                                item.actions.forEach(a => {
+                                    const b = document.createElement('button');
+                                    b.className = 'action-button';
+                                    b.textContent = a.label;
+                                    b.onclick = (e) => handleActionClick(a.value, a.metadata, e.target);
+                                    actDiv.appendChild(b);
+                                });
+                                sendingDiv.appendChild(actDiv);
+                            }
+                        });
+                    })
+                    .catch(() => {
+                        hideTypingIndicator();
+                        isWaitingForResponse = false;
+                        appendMessage('bot', '❌ Error al procesar.');
+                    });
+            }
+        }
+
+    } else if (value === 'consulta_bd') {
+            // Cuando el usuario pulsa “Consulta Base de Datos”:
+            // 1) Capturamos el texto actual (si queremos conservarlo)
+            let originalText = '';
+            const firstChild = parentMsgDiv.querySelector('div');
+            if (firstChild) {
+                originalText = firstChild.textContent;
+            }
+            // 2) Vaciamos el div y reconstruimos con prompt + input + flecha
+            parentMsgDiv.innerHTML = '';
+            parentMsgDiv.className = 'message bot-message';
+
+            // (a) Mostramos el texto original si lo hubiera
+            if (originalText) {
+                const textDiv = document.createElement('div');
+                textDiv.textContent = originalText;
+                parentMsgDiv.appendChild(textDiv);
+            }
+
+            // (b) Agregamos instrucción para que escriba la consulta
+            const promptDiv = document.createElement('div');
+            promptDiv.textContent = '✏️ Escribe aquí tu consulta de BD:';
+            promptDiv.style.marginTop = '8px';
+            parentMsgDiv.appendChild(promptDiv);
+
+            // (c) Contenedor para input + botón
+            const formDiv = document.createElement('div');
+            formDiv.style.display = 'flex';
+            formDiv.style.marginTop = '4px';
+
+            // Campo de texto para que el usuario escriba la consulta SQL
+            const inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.placeholder = 'SELECT * FROM clientes WHERE ...';
+            inputField.style.flex = '1';
+            inputField.style.padding = '8px';
+            inputField.style.border = '1px solid #ddd';
+            inputField.style.borderRadius = '20px';
+            inputField.style.outline = 'none';
+            inputField.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    sendQuery();
+                }
+            };
+            formDiv.appendChild(inputField);
+
+            // Botón de “flecha” para enviar la consulta
+            const sendButton = document.createElement('button');
+            sendButton.textContent = '➤';
+            sendButton.style.marginLeft = '8px';
+            sendButton.style.background = 'linear-gradient(to right, #4A00E0, #8E2DE2)';
+            sendButton.style.color = 'white';
+            sendButton.style.border = 'none';
+            sendButton.style.borderRadius = '50%';
+            sendButton.style.width = '40px';
+            sendButton.style.height = '40px';
+            sendButton.style.cursor = 'pointer';
+            sendButton.onclick = sendQuery;
+            formDiv.appendChild(sendButton);
+
+            parentMsgDiv.appendChild(formDiv);
+            inputField.focus();
+
+            // Función que se llama al pulsar la flecha o Enter
+            function sendQuery() {
+                const userText = inputField.value.trim();
+                if (!userText) return;
+
+                // Reemplazamos el contenido por “Enviando consulta…”
+                parentMsgDiv.innerHTML = '';
+                const sendingDiv = document.createElement('div');
+                sendingDiv.className = 'sending-placeholder';
+                sendingDiv.textContent = '⏳ Ejecutando tu consulta…';
+                parentMsgDiv.appendChild(sendingDiv);
+
+                // Llamada al webhook con action = 'run_query' y campo 'query' = userText
+                fetch(`http://localhost:5678/${WEBHOOK_SUFFIX}/MigraLey`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'consulta_bd',
+                        sessionId,
+                        metadata,
+                        query: userText
+                    })
+                })
+                    .then(response => {
+                        hideTypingIndicator();
+                        isWaitingForResponse = false;
+
+                        if (response.status === 400) {
+                            // Si el servidor responde 400, consulta enviada con éxito
+                            parentMsgDiv.innerHTML = '';
+                            const done = document.createElement('div');
+                            done.textContent = '✅ Consulta enviada. Revisa los resultados a continuación.';
+                            parentMsgDiv.appendChild(done);
+                            // No borramos este div; el siguiente appendMessage de resultados lo mostrará abajo
+                            return null;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data) return;
+                        // Mostramos los replies parciales (plan de tareas, resultados, etc.)
+                        const replies = Array.isArray(data) ? data : [data];
+                        replies.forEach(item => {
+                            appendMessage('bot', item.reply, item.actions,item);
+                        });
+                    })
+                    .catch(() => {
+                        hideTypingIndicator();
+                        isWaitingForResponse = false;
+                        appendMessage('bot', '❌ Error al procesar la consulta.');
+                    });
+            }
+        }
+        else if (value === 'remakeScript') {
+            let originalText = '';
+            const firstChild = parentMsgDiv.querySelector('div');
+            if (firstChild) {
+                originalText = firstChild.textContent;
+            }
+
+            if (parentMsgDiv) {
+                parentMsgDiv.innerHTML = '';
+                parentMsgDiv.className = 'message bot-message';
+
+                const textDiv = document.createElement('div');
+                textDiv.textContent = originalText;
+                parentMsgDiv.appendChild(textDiv);
+
+                // 1. Mostrar prompt personalizado
+                const promptDiv = document.createElement('div');
+                promptDiv.textContent = '✏️ ¿Qué aspecto del análisis quieres mejorar o aclarar?';
+                promptDiv.style.marginTop = '8px';
+                parentMsgDiv.appendChild(promptDiv);
+
+                const formDiv = document.createElement('div');
+                formDiv.style.display = 'flex';
+                formDiv.style.marginTop = '4px';
+
+                const inputField = document.createElement('input');
+                inputField.type = 'text';
+                inputField.placeholder = 'Por ejemplo: “Explica mejor la tendencia de ventas”';
+                inputField.style.flex = '1';
+                inputField.style.padding = '8px';
+                inputField.style.border = '1px solid #ddd';
+                inputField.style.borderRadius = '20px';
+                inputField.style.outline = 'none';
+                inputField.onkeypress = (e) => {
+                    if (e.key === 'Enter') {
+                        sendImprove();
+                    }
+                };
+                formDiv.appendChild(inputField);
+
+                const sendButton = document.createElement('button');
+                sendButton.textContent = '➤';
+                sendButton.style.marginLeft = '8px';
+                sendButton.style.background = 'linear-gradient(to right, #4A00E0, #8E2DE2)';
+                sendButton.style.color = 'white';
+                sendButton.style.border = 'none';
+                sendButton.style.borderRadius = '50%';
+                sendButton.style.width = '40px';
+                sendButton.style.height = '40px';
+                sendButton.style.cursor = 'pointer';
+                sendButton.onclick = sendImprove;
+                formDiv.appendChild(sendButton);
+
+                parentMsgDiv.appendChild(formDiv);
+                inputField.focus();
+
+                function sendImprove() {
+                    const userText = inputField.value.trim();
+                    if (!userText) return;
+
+                    parentMsgDiv.innerHTML = '';
+                    const sendingDiv = document.createElement('div');
+                    sendingDiv.className = 'sending-placeholder';
+                    sendingDiv.textContent = '⏳ Solicitando mejoras...';
+                    parentMsgDiv.appendChild(sendingDiv);
+
+                    fetch(`http://localhost:5678/${WEBHOOK_SUFFIX}/MigraLey`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'mejorar_analisis',
+                            sessionId,
+                            metadata,
+                            feedback: userText
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            isWaitingForResponse = false;
+                            sendingDiv.innerHTML = '';
+                            sendingDiv.className = 'bot-response';
+
+                            const replies = Array.isArray(data) ? data : [data];
+                            replies.forEach(item => {
+                                const replyTextDiv = document.createElement('div');
+                                replyTextDiv.textContent = item.reply;
+                                sendingDiv.appendChild(replyTextDiv);
+
+                                if (item.actions) {
+                                    const actDiv = document.createElement('div');
+                                    actDiv.className = 'bot-actions';
+                                    item.actions.forEach(a => {
+                                        const b = document.createElement('button');
+                                        b.className = 'action-button';
+                                        b.textContent = a.label;
+                                        b.onclick = (e) => handleActionClick(a.value, a.metadata, e.target);
+                                        actDiv.appendChild(b);
+                                    });
+                                    sendingDiv.appendChild(actDiv);
+                                }
+                            });
+                        })
+                        .catch(() => {
+                            isWaitingForResponse = false;
+                            appendMessage('bot', '❌ Error al solicitar mejoras.');
+                        });
+                }
+            }
+        }
+        else {
+            // Para cualquier otra action (p. ej. run_query, analyze_data, etc.)
+            // mostramos el mensaje del usuario y llamamos al fetch normal.
+            showTypingIndicator();
+            appendMessage('user', { label: value, value: value });
+
+            fetch(`http://localhost:5678/${WEBHOOK_SUFFIX}/MigraLey`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: value, sessionId, metadata })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideTypingIndicator();
+                    isWaitingForResponse = false;
+                    const replies = Array.isArray(data) ? data : [data];
+                    replies.forEach(item => {
+                        appendMessage('bot', item.reply, item.actions);
+                    });
+                })
+                .catch(() => {
+                    hideTypingIndicator();
+                    isWaitingForResponse = false;
+                    appendMessage('bot', '❌ Error al procesar.');
+                });
+        }
+    }
+
+
+    function sendMessage() {
+        if (isWaitingForResponse) return;
+        const input = document.getElementById('userInput');
+        const msg=input.value.trim();
+        if(!msg) return;
+        appendMessage('user', msg); input.value='';
+        showTypingIndicator();
+        const payload = isTalkIAActive
+            ? {
+                action: 'TalkIA',
+                sessionId,
+                metadata: { ...currentMetadata, feedback: msg } // incluye el nuevo mensaje
+            }
+            : {
+                message: msg,
+                sessionId
+            };
+        fetch(`http://localhost:5678/${WEBHOOK_SUFFIX}/MigraLey`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        })
+            .then(res=>res.json())
+            .then(data=>{ hideTypingIndicator(); appendMessage('bot', data.reply, data.actions); })
+            .catch(()=>{ hideTypingIndicator(); appendMessage('bot','❌ Error de conexión.'); });
+    }
+
+    document.getElementById('userInput').addEventListener('keypress', e => { if(e.key==='Enter') sendMessage(); });
+    window.onload = initConversation;
+</script>
+</body>
+</html>
