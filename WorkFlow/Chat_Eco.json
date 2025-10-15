@@ -1,0 +1,743 @@
+{
+  "name": "Chat_Eco",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        304
+      ],
+      "id": "8d1be078-abf4-4b13-833e-c32a6cfb66ea",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "14Jh5OhZaKiQNfMP",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        832
+      ],
+      "id": "cfb3d48d-03e5-4833-b85d-3e97e8a6c4ca",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        896,
+        848
+      ],
+      "id": "0177f325-3cfc-4bb3-a73c-7d78b6788740",
+      "name": "Embeddings Ollama1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        592,
+        880
+      ],
+      "id": "05c07884-4b61-4a4c-b6f0-bf1ba26bbdef",
+      "name": "Embeddings Ollama2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "RAG_PSGE",
+          "mode": "list",
+          "cachedResultName": "RAG_PSGE"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        672
+      ],
+      "id": "0e741fb3-5594-47c8-9076-25e9865b9bf7",
+      "name": "PSGE",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user of la ley del impuesto general a las ventas",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "RAG_LEY_IMPUESTO_GENERAL",
+          "mode": "list",
+          "cachedResultName": "RAG_LEY_IMPUESTO_GENERAL"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        688
+      ],
+      "id": "dc812be2-c8b2-46ee-9a3f-0cf1e83390f4",
+      "name": "Ley del Impuesto a la Renta",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user of la ley del impuesto de la renta",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "RAG_LEY_RENTA",
+          "mode": "list",
+          "cachedResultName": "RAG_LEY_RENTA"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        688
+      ],
+      "id": "91577637-8276-4ebc-86a3-85d46fe00711",
+      "name": "Ley del Impuesto General a las Ventas",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LA pregunta del usario es : {{ $json.pregunta_usuario }}\nY la memoria del chatbot es: {{ $json.historial_texto }}",
+        "options": {
+          "systemMessage": "Rol: Eres un asistente experto en contabilidad y tributación de Perú. Tu misión es analizar cada pregunta y seleccionar de manera inteligente la herramienta de conocimiento más adecuada para formular una respuesta precisa y bien fundamentada. Cuando el usuario pida ejemplos o casos prácticos, apóyate en la base de Casos para estructurar y ejemplificar.\n\nHerramientas de Conocimiento\n\nRAG_NORMA_MICROEMPRESAS\nContenido: Norma Peruana de Información Financiera para Microempresas (NPIF).\nCuándo usar: Preguntas sobre principios y normas aplicables a microempresas (preparación EEFF, reconocimiento/medición de inventarios, PPE, etc.). Priorízala si la pregunta menciona explícitamente “microempresa”.\n\nRAG_NIIF_PYMES_GLOSARIO\nContenido: NIIF para PYMES + Glosario.\nCuándo usar: Principios NIIF de fondo para PYMES (no micro), criterios de reconocimiento, medición, presentación y baja; definiciones y aplicación por secciones.\n\nRAG_PSGE\nContenido: Plan Contable General Empresarial (PCGE).\nCuándo usar: Dudas sobre códigos de cuenta, dinámica (débitos/créditos) y registro contable. Si el foco es cómo registrar, usa esta herramienta.\n\nRAG_LEY_RENTA\nContenido: Ley del Impuesto a la Renta.\nCuándo usar: Categorías de renta, gastos deducibles, tasas, retenciones, pagos a cuenta, DJ Anual.\n\nRAG_LEY_IMPUESTO_GENERAL\nContenido: Ley del IGV.\nCuándo usar: IGV, crédito fiscal, operaciones gravadas/no gravadas, exportaciones, detracciones/percepciones/retenciones.\n\nRAG_ECO_CASOS_XLS_PE (Nueva: Casos prácticos en Excel)\nContenido: Base vectorial con casos y ejercicios prácticos (e.g., NIC 1, NIC 2, NIC 36 y “Casos Prácticos”), estructurados desde archivos Excel.\nNombre de colección/Qdrant: RAG_ECO_CASOS_XLS_PE.\nCuándo usar:\n\nCuando el usuario solicite ejemplos, casos prácticos, ejercicios resueltos, estructuras paso a paso, plantillas de asientos, supuestos o formatos de solución.\n\nPara inspirar la estructura del ejemplo (enunciado → análisis → cálculos → asientos PCGE → conclusión).\nImportante: Esta herramienta no sustituye la base normativa. Si la pregunta es normativa/tributaria, selecciona la herramienta normativa principal y además consulta esta base solo para el bloque de “Ejemplo guiado”.\n\nPrincipios de Operación y Razonamiento\n\nAnaliza y clasifica: Identifica el tema central y el tipo de entidad (Microempresa, PYME u otra). Clasifica en:\nNorma Microempresas / NIIF-PYMES-Glosario / PCGE / Renta / IGV.\n\nSelecciona UNA herramienta principal: Activa solo una como fuente normativa/central.\n\nSi además el usuario pide ejemplo (o conviene darlo), consulta RAG_ECO_CASOS_XLS_PE para el bloque de ejemplo (no mezclar citas normativas de fuentes distintas).\n\nReglas de prioridad:\n\nSi menciona microempresa → prioriza RAG_NORMA_MICROEMPRESAS.\n\nSi pregunta trae número de cuenta pero busca el principio subyacente → RAG_NIIF_PYMES_GLOSARIO.\n\nSi pregunta es sobre registro/dinámica de la cuenta → RAG_PSGE.\n\nConsulta de Casos (cuando proceda):\n\nSi el usuario pide ejemplos o ejercicios, consulta RAG_ECO_CASOS_XLS_PE para inspirar la estructura y estilo del ejemplo.\n\nAjusta nombres/números a los hechos del caso actual y expón supuestos si algo falta.\n\nSi hay tags por NIC en los casos (p.ej. nic=36), filtra por ese tag al buscar.\n\nCombina conocimiento y contexto: Usa el [CONTEXTO] de la herramienta principal para responder; el bloque de ejemplo puede tomar estructura/ideas de RAG_ECO_CASOS_XLS_PE. Distingue claramente Base normativa vs Ejemplo guiado.\n\nSin contexto útil: Si la herramienta seleccionada no devuelve material relevante y la pregunta es general, responde con tu conocimiento experto, indicándolo.\n\nFormato de Respuesta\n\nTítulo breve con el tema clave.\n\nCriterio/Regla principal (norma/ley/sección): cita sección/artículo cuando aplique.\n\nRegistro PCGE (si corresponde): cuentas, naturaleza (D/H) y notas.\n\nEjemplo guiado (si procede) – Basado en RAG_ECO_CASOS_XLS_PE\n\nEnunciado (supuestos claros)\n\nAnálisis (paso a paso)\n\nCálculos (fórmulas breves)\n\nAsientos PCGE\n\nConclusión\n\nNotas/Advertencias (límites, excepciones, documentación soporte).\n\nNegritas para conceptos clave, listas para legibilidad.\n\nEjemplos de selección de herramienta\n\n“¿Qué gastos son deducibles en la tercera categoría?” → RAG_LEY_RENTA (principal).\n\nSi piden ejemplo: agrega bloque de Ejemplo guiado consultando RAG_ECO_CASOS_XLS_PE.\n\n“Explica la dinámica de la cuenta 42” → RAG_PSGE.\n\n“¿Cómo se miden las propiedades de inversión según NIIF para PYMES?” → RAG_NIIF_PYMES_GLOSARIO.\n\n“¿Una microempresa puede revaluar su PPE?” → RAG_NORMA_MICROEMPRESAS.\n\n“Hazme un caso práctico de arrendamiento financiero (NIC 17/NIC 16/NIC 36 seg. corresponda)” → herramienta normativa principal según alcance + RAG_ECO_CASOS_XLS_PE para estructurar el Ejemplo guiado.",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        -32
+      ],
+      "id": "5665515e-fe1c-428b-b028-a80db55c875b",
+      "name": "Agente Economico"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Economic",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -640,
+        -96
+      ],
+      "id": "980c43a1-ebc1-4f03-9e20-3e7cb2c24a40",
+      "name": "Webhook",
+      "webhookId": "5cb1b650-3f65-48dd-826d-2316abccacea"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        640,
+        -128
+      ],
+      "id": "f45bd6b5-cc46-46eb-9d7e-384ada87f253",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenemos los datos que llegan del webhook\nconst body = items[0].json.body;\n\n// Extraemos el historial de conversación (la 'memoria')\nconst memoria = body.metadata.memoria;\n\n// Inicializamos una cadena de texto vacía para construir nuestro historial\nlet historialFormateado = \"\";\n\n// Recorremos cada mensaje en el array 'memoria'\nfor (const mensaje of memoria) {\n  let rol = \"\";\n  // Traducimos el 'role' a algo más legible para el modelo\n  if (mensaje.role === 'user') {\n    rol = \"Usuario\";\n  } else if (mensaje.role === 'assistant') {\n    rol = \"Asistente\";\n  } else {\n    rol = mensaje.role; // Usar el rol original si no es user/assistant\n  }\n\n  // Añadimos el mensaje formateado a nuestra cadena, con un salto de línea\n  historialFormateado += `${rol}: ${mensaje.content}\\n`;\n}\n\n// Preparamos el resultado final que el nodo 'Code' devolverá.\n// Esto hace que los datos estén disponibles para los siguientes nodos.\nconst resultado = {\n  json: {\n    pregunta_usuario: body.metadata.feedback,\n    historial_texto: historialFormateado.trim() // .trim() para quitar el último salto de línea\n  }\n};\n\n// Devolvemos el objeto estructurado\nreturn resultado;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        -112
+      ],
+      "id": "76311a48-6ec1-4a55-a45a-d13a3c19d37a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === CÓDIGO CORREGIDO PARA EL NODO \"CODE\" FINAL (DESPUÉS DE MERGE) ===\n\n// 1. OBTENER LOS DATOS DE ENTRADA\n// Usaremos referencias explícitas a los nodos para mayor claridad.\n// Asegúrate de que los nombres de tus nodos ('Webhook', 'NombreDeTuNodoLLM') coincidan.\n\n// Obtenemos la respuesta del asistente desde tu nodo de IA.\n// AJUSTA 'NombreDeTuNodoLLM' y el campo '.json.text' si es diferente.\nconst respuestaDelAsistente = $input.first().json.output || \"Lo siento, no pude procesar la respuesta.\";\n\n// Obtenemos los datos originales que vinieron de Django desde el nodo Webhook.\nconst webhookData = $('Webhook').first().json.body.metadata;\nconst memoriaOriginal = $('Webhook').first().json.body.metadata.memoria;\nconst preguntaUsuarioActual = $('Webhook').first().json.body.metadata.feedback;\n\n\n// 2. CONSTRUIR LA MEMORIA ACTUALIZADA (LA PARTE CORREGIDA)\n// Ahora creamos objetos tanto para la pregunta del usuario como para la respuesta del asistente.\n\n// Objeto para la pregunta actual del usuario\nconst nuevoMensajeUsuario = {\n  role: \"user\",\n  content: preguntaUsuarioActual.trim()\n};\n\n// Objeto para la nueva respuesta del asistente\nconst nuevoMensajeAsistente = {\n  role: \"assistant\",\n  content: respuestaDelAsistente.trim()\n};\n\n// Combinamos la memoria original CON la nueva interacción (pregunta Y respuesta)\nlet memoriaActualizada = [...memoriaOriginal, nuevoMensajeUsuario, nuevoMensajeAsistente];\n\n\n// 3. LIMITAR LA MEMORIA (A 3 PREGUNTAS Y SUS RESPUESTAS)\n// Esta lógica sigue siendo la misma y es una buena práctica.\nconst LIMITE_MENSAJES = 4; \nif (memoriaActualizada.length > LIMITE_MENSAJES) {\n  // 'slice' con un número negativo extrae los últimos N elementos.\n  memoriaActualizada = memoriaActualizada.slice(-LIMITE_MENSAJES);\n}\n\n\n// 4. CONSTRUIR EL JSON DE SALIDA PARA DJANGO\n// La estructura final no cambia.\nconst resultadoFinal = [{\n  \"reply\": respuestaDelAsistente.trim(),\n  \"memoria\": memoriaActualizada // Ahora esta memoria es completa y correcta.\n}];\n\n\n// 5. DEVOLVER EL RESULTADO\n// Este será el cuerpo de la respuesta que se enviará de vuelta a Django.\nreturn resultadoFinal;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -128
+      ],
+      "id": "b0128154-6a63-4b10-abaf-9c3c1f919c40",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        304,
+        864
+      ],
+      "id": "df713a57-ec40-40c5-a490-fb5f4b4dbde9",
+      "name": "Embeddings Ollama3",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user of NIF Pyemes",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "RAG_NIIF_PYMES_GLOSARIO",
+          "mode": "list",
+          "cachedResultName": "RAG_NIIF_PYMES_GLOSARIO"
+        },
+        "topK": 5,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        704
+      ],
+      "id": "f55deecd-76dd-4f23-aebe-fba39e77fec9",
+      "name": "NIF PYMES",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        800,
+        528
+      ],
+      "id": "9b8a0a00-4d46-4d53-83ec-59b6cd6bbe79",
+      "name": "Embeddings Ollama4",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user of NORMA_MICROEMPRESAS_PERU",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "RAG_NORMA_MICROEMPRESAS_PERU",
+          "mode": "list",
+          "cachedResultName": "RAG_NORMA_MICROEMPRESAS_PERU"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        352
+      ],
+      "id": "739f551e-da73-458a-8c7d-c804cb3d2bb7",
+      "name": "NORMA MICROEMPRESAS PERU",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        448,
+        528
+      ],
+      "id": "2e985aa5-3cfc-404e-92c9-81170c995f99",
+      "name": "Embeddings Ollama5",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user of CASOS ECONOMICOS",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "RAG_ECO_CASOS_XLS_PE",
+          "mode": "list",
+          "cachedResultName": "RAG_ECO_CASOS_XLS_PE"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        368
+      ],
+      "id": "1ef8eb60-6297-41a3-961b-c39dc9ec6e80",
+      "name": "CASOS ECONOMICOS",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        96,
+        592
+      ],
+      "id": "9cd887e9-3e39-4887-9b2c-ede13e4ba995",
+      "name": "Embeddings Ollama6",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this knowledge base to answer questions from the user",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "DataConv",
+          "mode": "list",
+          "cachedResultName": "DataConv"
+        },
+        "topK": 8,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        384
+      ],
+      "id": "85af3bc1-9ce0-4394-a8f4-b47276578a6a",
+      "name": "Conversacion",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -1328,
+        608
+      ],
+      "id": "7b5bda13-32d0-4056-82f7-38a6390c1560",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "HTmEJc7rJq06bQRH",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -592,
+        544
+      ],
+      "id": "c30d7cc6-cbbf-4880-b149-c0da1c3b5ecc",
+      "name": "When chat message received",
+      "webhookId": "3e1e2689-1aa1-434b-96b3-c0cbc09a5004"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LA pregunta del usario es : {{ $json.chatInput }}\n",
+        "options": {
+          "systemMessage": "Rol: Eres un asistente experto en contabilidad y tributación de Perú. Tu misión es analizar cada pregunta y seleccionar de manera inteligente la herramienta de conocimiento más adecuada para formular una respuesta precisa y bien fundamentada. Cuando el usuario pida ejemplos o casos prácticos, apóyate en la base de Casos para estructurar y ejemplificar.\n\nHerramientas de Conocimiento\n\nRAG_NORMA_MICROEMPRESAS\nContenido: Norma Peruana de Información Financiera para Microempresas (NPIF).\nCuándo usar: Preguntas sobre principios y normas aplicables a microempresas (preparación EEFF, reconocimiento/medición de inventarios, PPE, etc.). Priorízala si la pregunta menciona explícitamente “microempresa”.\n\nRAG_NIIF_PYMES_GLOSARIO\nContenido: NIIF para PYMES + Glosario.\nCuándo usar: Principios NIIF de fondo para PYMES (no micro), criterios de reconocimiento, medición, presentación y baja; definiciones y aplicación por secciones.\n\nRAG_PSGE\nContenido: Plan Contable General Empresarial (PCGE).\nCuándo usar: Dudas sobre códigos de cuenta, dinámica (débitos/créditos) y registro contable. Si el foco es cómo registrar, usa esta herramienta.\n\nRAG_LEY_RENTA\nContenido: Ley del Impuesto a la Renta.\nCuándo usar: Categorías de renta, gastos deducibles, tasas, retenciones, pagos a cuenta, DJ Anual.\n\nRAG_LEY_IMPUESTO_GENERAL\nContenido: Ley del IGV.\nCuándo usar: IGV, crédito fiscal, operaciones gravadas/no gravadas, exportaciones, detracciones/percepciones/retenciones.\n\nRAG_ECO_CASOS_XLS_PE (Nueva: Casos prácticos en Excel)\nContenido: Base vectorial con casos y ejercicios prácticos (e.g., NIC 1, NIC 2, NIC 36 y “Casos Prácticos”), estructurados desde archivos Excel.\nNombre de colección/Qdrant: RAG_ECO_CASOS_XLS_PE.\nCuándo usar:\n\nCuando el usuario solicite ejemplos, casos prácticos, ejercicios resueltos, estructuras paso a paso, plantillas de asientos, supuestos o formatos de solución.\n\nPara inspirar la estructura del ejemplo (enunciado → análisis → cálculos → asientos PCGE → conclusión).\nImportante: Esta herramienta no sustituye la base normativa. Si la pregunta es normativa/tributaria, selecciona la herramienta normativa principal y además consulta esta base solo para el bloque de “Ejemplo guiado”.\n\nPrincipios de Operación y Razonamiento\n\nAnaliza y clasifica: Identifica el tema central y el tipo de entidad (Microempresa, PYME u otra). Clasifica en:\nNorma Microempresas / NIIF-PYMES-Glosario / PCGE / Renta / IGV.\n\nSelecciona UNA herramienta principal: Activa solo una como fuente normativa/central.\n\nSi además el usuario pide ejemplo (o conviene darlo), consulta RAG_ECO_CASOS_XLS_PE para el bloque de ejemplo (no mezclar citas normativas de fuentes distintas).\n\nReglas de prioridad:\n\nSi menciona microempresa → prioriza RAG_NORMA_MICROEMPRESAS.\n\nSi pregunta trae número de cuenta pero busca el principio subyacente → RAG_NIIF_PYMES_GLOSARIO.\n\nSi pregunta es sobre registro/dinámica de la cuenta → RAG_PSGE.\n\nConsulta de Casos (cuando proceda):\n\nSi el usuario pide ejemplos o ejercicios, consulta RAG_ECO_CASOS_XLS_PE para inspirar la estructura y estilo del ejemplo.\n\nAjusta nombres/números a los hechos del caso actual y expón supuestos si algo falta.\n\nSi hay tags por NIC en los casos (p.ej. nic=36), filtra por ese tag al buscar.\n\nCombina conocimiento y contexto: Usa el [CONTEXTO] de la herramienta principal para responder; el bloque de ejemplo puede tomar estructura/ideas de RAG_ECO_CASOS_XLS_PE. Distingue claramente Base normativa vs Ejemplo guiado.\n\nSin contexto útil: Si la herramienta seleccionada no devuelve material relevante y la pregunta es general, responde con tu conocimiento experto, indicándolo.\n\nFormato de Respuesta\n\nTítulo breve con el tema clave.\n\nCriterio/Regla principal (norma/ley/sección): cita sección/artículo cuando aplique.\n\nRegistro PCGE (si corresponde): cuentas, naturaleza (D/H) y notas.\n\nEjemplo guiado (si procede) – Basado en RAG_ECO_CASOS_XLS_PE\n\nEnunciado (supuestos claros)\n\nAnálisis (paso a paso)\n\nCálculos (fórmulas breves)\n\nAsientos PCGE\n\nConclusión\n\nNotas/Advertencias (límites, excepciones, documentación soporte).\n\nNegritas para conceptos clave, listas para legibilidad.\n\nEjemplos de selección de herramienta\n\n“¿Qué gastos son deducibles en la tercera categoría?” → RAG_LEY_RENTA (principal).\n\nSi piden ejemplo: agrega bloque de Ejemplo guiado consultando RAG_ECO_CASOS_XLS_PE.\n\n“Explica la dinámica de la cuenta 42” → RAG_PSGE.\n\n“¿Cómo se miden las propiedades de inversión según NIIF para PYMES?” → RAG_NIIF_PYMES_GLOSARIO.\n\n“¿Una microempresa puede revaluar su PPE?” → RAG_NORMA_MICROEMPRESAS.\n\n“Hazme un caso práctico de arrendamiento financiero (NIC 17/NIC 16/NIC 36 seg. corresponda)” → herramienta normativa principal según alcance + RAG_ECO_CASOS_XLS_PE para estructurar el Ejemplo guiado.",
+          "maxIterations": 8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        480
+      ],
+      "id": "57a7992d-ad06-4e62-bd5e-8882e73de3e7",
+      "name": "Agente Economico1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Economico1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "PSGE",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Ley del Impuesto a la Renta",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Ley del Impuesto General a las Ventas",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PSGE": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agente Economico1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ley del Impuesto a la Renta": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agente Economico1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ley del Impuesto General a las Ventas": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agente Economico1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Economico": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "NIF PYMES",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NIF PYMES": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agente Economico1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama4": {
+      "ai_embedding": [
+        [
+          {
+            "node": "NORMA MICROEMPRESAS PERU",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NORMA MICROEMPRESAS PERU": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agente Economico1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama5": {
+      "ai_embedding": [
+        [
+          {
+            "node": "CASOS ECONOMICOS",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CASOS ECONOMICOS": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agente Economico1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama6": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Conversacion",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversacion": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Economico",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Agente Economico1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ad075ebc-c79a-45ce-8e59-dc590a14ed13",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dacbba36553559c93b9ffcd53fa2884559d8ed0448a127d515805677f9080ec4"
+  },
+  "id": "tfSzBwyFRiyfLRI2",
+  "tags": []
+}

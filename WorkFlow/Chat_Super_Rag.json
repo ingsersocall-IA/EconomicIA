@@ -1,0 +1,201 @@
+{
+  "name": "Chat_Super_Rag",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "IngesEconmic",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -512,
+        -80
+      ],
+      "id": "4f05953b-9c74-479e-89cd-465d3775843e",
+      "name": "Webhook",
+      "webhookId": "5cb1b650-3f65-48dd-826d-2316abccacea"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        64
+      ],
+      "id": "2c1f27e3-7b4c-4e78-b7a4-c03e6cbab2a0",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "uoRjFFqU0vfFwxAQ",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        304,
+        -128
+      ],
+      "id": "0e9812d9-0146-4702-8650-d2620758a4d5",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        64
+      ],
+      "id": "8889a14e-bf3d-4936-8574-8194d0d2c999",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Toma el primer item de entrada y construye el texto solicitado.\nconst src = $input.first().json?.body?.data ?? {};\n\nconst user_text = src.user_text ?? '';\nconst assistant_text = src.assistant_text ?? '';\n\nconst texto_salida =\n  `Respuesta correcta para : ${user_text}\\n` +\n  `Respuesta correcta: ${assistant_text}`;\n\nreturn [\n  {\n    json: {\n      texto_salida\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        -112
+      ],
+      "id": "337b46d6-b617-4d31-bd76-c9feec4a669c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "chunkSize": 10000
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterTokenSplitter",
+      "typeVersion": 1,
+      "position": [
+        128,
+        192
+      ],
+      "id": "f6a43993-17e4-4c08-a908-2aff15e7cfba",
+      "name": "Token Splitter"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "DataConv",
+          "mode": "list",
+          "cachedResultName": "DataConv"
+        },
+        "embeddingBatchSize": 1000,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        -144
+      ],
+      "id": "ae46f59d-80c8-40a1-904b-2faf4908b3eb",
+      "name": "BD conversación",
+      "credentials": {
+        "qdrantApi": {
+          "id": "qlvxX0onjK61WkJg",
+          "name": "QdrantApi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "BD conversación",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "BD conversación",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "BD conversación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BD conversación": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "27fc297f-3e9e-4b5a-8238-df0fcbbfc0d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dacbba36553559c93b9ffcd53fa2884559d8ed0448a127d515805677f9080ec4"
+  },
+  "id": "r6aqINV5OC7JF6kd",
+  "tags": []
+}
