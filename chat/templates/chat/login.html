@@ -2,135 +2,446 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>AGENTE IA - ECONOMIC</title>
-  {% load static %}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENTE IA - CONTABLE</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    (function(){
-      try {
-        var t = localStorage.getItem('theme');
-        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (t === 'dark' || (!t && prefersDark)) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
-      } catch(e) {}
-    })();
-  </script>
+
   <style>
-    #animated-bg{position:fixed;inset:0;z-index:-1;background:#0A4795}
-    #animated-bg canvas{width:100%;height:100%}
+    :root{
+      --brand-900:#401517; --brand-800:#541C1F; --brand-700:#66272A; --brand-600:#7A3135;
+      --brand-500:#AF7766; --brand-400:#C99488; --brand-300:#D6ADA0; --brand-200:#E6C8BC;
+      --brand-100:#F1DED7; --brand-50:#FAF0EC; --accent-600:#E87E36;
+    }
+
+    .bg-blue-600{background-color:var(--brand-600)!important;}
+    .hover\:bg-blue-700:hover{background-color:var(--brand-700)!important;}
+    .text-blue-600{color:var(--brand-600)!important;}
+
+    /* Animación de fondo - DEBE estar detrás */
+    #animated-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none; /* Importante: permite interactuar con elementos encima */
+    }
+    #animated-bg canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Panel rojo sin scroll */
+    .red-panel-content {
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #c9b3ad transparent;
+    }
+    .red-panel-content::-webkit-scrollbar { width: 8px; }
+    .red-panel-content::-webkit-scrollbar-thumb { background: #c9b3ad; border-radius: 999px; }
+
+    /* Contenido sobre la animación */
+    .content-layer {
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Marca de agua del escudo */
+    .watermark::before{
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: 2rem;
+      transform: translateY(-50%);
+      width: 200px;
+      height: 200px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 10 L90 90 L10 90 Z' fill='%23666' opacity='0.05'/%3E%3C/svg%3E") center / contain no-repeat;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+
+    /* Transiciones suaves */
+    * {
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    /* Mejoras para móvil */
+    @media (max-width: 768px) {
+      .red-panel-content {
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .watermark::before {
+        width: 150px;
+        height: 150px;
+        right: 1rem;
+      }
+    }
+
+    /* Animación de entrada del formulario */
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-container {
+      animation: slideIn 0.6s ease-out;
+    }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-950 flex items-center justify-center min-h-screen relative antialiased">
-<div id="animated-bg" aria-hidden="true"><canvas id="demo-canvas"></canvas></div>
 
-<div class="w-full max-w-sm p-6">
-  <div class="bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
-    <div class="flex items-center justify-center mb-4 select-none">
-      <img src="{% static 'images/logo.png' %}" alt="EconomicIA" class="h-12 w-auto object-contain" loading="eager" decoding="async">
+<body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased">
+
+<article class="flex flex-col md:flex-row min-h-screen">
+
+  <!-- PANEL IZQUIERDO: Barra roja -->
+  <section class="w-full md:w-[22rem] lg:w-[36rem] flex-shrink-0 bg-gradient-to-b from-[var(--brand-700)] via-[var(--brand-800)] to-[var(--brand-900)]">
+    <div class="red-panel-content p-6 md:p-8 text-white space-y-6">
+
+      <!-- Bienvenida -->
+      <header>
+        <div class="text-xs uppercase tracking-widest opacity-90 mb-2">Bienvenido(a) al</div>
+        <h1 class="text-3xl font-bold leading-tight mb-3">Agente Contable Inteligente</h1>
+        <p class="text-white/90 text-sm leading-relaxed">
+          Inicia sesión para continuar con tus conversaciones y herramientas contables.
+        </p>
+      </header>
+
+      <!-- Descripción del proyecto -->
+      <section>
+        <h3 class="text-xl font-bold mb-3">¿Qué es el Agente Contable?</h3>
+        <p class="text-white/90 text-sm leading-relaxed mb-4">
+          Asistente especializado con memoria vectorial y normativa contable-tributaria peruana para
+          <strong>NPIF/NIIF</strong>, <strong>PCGE</strong>, <strong>IGV</strong> y <strong>Renta</strong>.
+        </p>
+
+        <div class="space-y-3 text-sm">
+          <div class="bg-white/5 rounded-lg p-3">
+            <div class="font-semibold mb-1">NPIF Microempresas</div>
+            <div class="text-white/80 text-xs">EEFF y políticas contables</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3">
+            <div class="font-semibold mb-1">NIIF para PYMES</div>
+            <div class="text-white/80 text-xs">Fundamentos y glosario por secciones</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3">
+            <div class="font-semibold mb-1">PCGE</div>
+            <div class="text-white/80 text-xs">Códigos y dinámica contable</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3">
+            <div class="font-semibold mb-1">IGV & Renta</div>
+            <div class="text-white/80 text-xs">Crédito fiscal y deducciones</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Equipo del proyecto -->
+      <section>
+        <h4 class="text-sm font-bold uppercase tracking-wide mb-3 text-white/90">Equipo del proyecto</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-white/5 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-white/60 mb-1">Responsable</div>
+            <div class="font-medium text-xs leading-tight">Alberto Juan Carlos Rengifo Alegría</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-white/60 mb-1">Co-responsable</div>
+            <div class="font-medium text-xs leading-tight">Jorge Raúl Carreño Escobedo</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-white/60 mb-1">Miembro docente</div>
+            <div class="font-medium text-xs leading-tight">Roberto Bernardino Neyra Urquiza</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-white/60 mb-1">Miembro docente</div>
+            <div class="font-medium text-xs leading-tight">Edith Carla Melgar Esquivel</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-white/60 mb-1">Colaborador externo</div>
+            <div class="font-medium text-xs leading-tight">Paolo Acosta de la Cruz</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-white/60 mb-1">Colaboradora</div>
+            <div class="font-medium text-xs leading-tight">Erika Daniela Vallejo Pablo</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3 text-center col-span-2">
+            <div class="text-[10px] text-white/60 mb-1">Colaboradora</div>
+            <div class="font-medium text-xs leading-tight">Antuanet del Pilar Yarlaque Pérez</div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-[10px] text-white/60 leading-relaxed">
+          RAIS - Registro de Actividades de Investigación de San Marcos<br>
+          © RAIS · Fecha: 08/07/2025 · Hora: 11:17:11
+        </div>
+      </section>
+
     </div>
-    <h1 class="text-xl font-semibold mb-1 text-center text-gray-900 dark:text-gray-100 tracking-tight">Iniciar sesión</h1>
-    <p class="text-center text-xs text-gray-500 dark:text-gray-400 mb-6">Agente IA · Economic</p>
+  </section>
 
-    {% if messages %}
-    <div id="login-alerts">
-      {% for message in messages %}
-      <div class="mb-3 px-3 py-2 text-sm rounded-lg bg-{% if message.tags == 'error' %}red{% else %}green{% endif %}-100 text-{% if message.tags == 'error' %}red{% else %}green{% endif %}-800">
-        {{ message }}
-      </div>
-      {% endfor %}
+  <!-- PANEL DERECHO: Formulario + Animación -->
+  <section class="flex-1 relative overflow-hidden">
+
+    <!-- Animación de fondo -->
+    <div id="animated-bg" aria-hidden="true">
+      <canvas id="demo-canvas"></canvas>
     </div>
-    {% endif %}
 
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
-      <div>
-        <label for="id_username" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Usuario</label>
-        <input type="text" name="username" id="id_username"
-               class="mt-1 w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-               required>
-      </div>
-      <div>
-        <label for="id_password" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Contraseña</label>
-        <input type="password" name="password" id="id_password"
-               class="mt-1 w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-               required>
-      </div>
-      <div class="pt-2 flex items-center justify-between">
-        <button type="submit"
-                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">Ingresar</button>
-        <a href="{% url 'register' %}" class="text-sm text-blue-50 underline decoration-white/30 hover:text-white">¿No tienes cuenta? Regístrate</a>
-      </div>
-    </form>
-  </div>
-</div>
+    <!-- Contenido del formulario -->
+    <div class="content-layer flex flex-col min-h-screen">
 
-<!-- GSAP (tu animación original) -->
+      <!-- Contenedor centrado del formulario -->
+      <div class="flex-1 flex items-center justify-center p-4 md:p-8">
+        <div class="w-full max-w-md form-container">
+
+          <div class="watermark bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-8">
+
+            <!-- Título -->
+            <div class="text-center mb-8">
+              <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Inicio de sesión</h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Ingresa tus credenciales para continuar
+              </p>
+            </div>
+
+            <!-- Alertas (simuladas para demo) -->
+            {% if messages %}
+            <div class="mb-6 space-y-2">
+              {% for message in messages %}
+              {% if 'auth' in message.tags %}
+              <div class="px-4 py-3 text-sm rounded-lg border
+          {% if message.level_tag == 'success' %} bg-green-50 text-green-800 border-green-200
+          {% elif message.level_tag == 'error' %} bg-red-50 text-red-800 border-red-200
+          {% elif message.level_tag == 'warning' %} bg-yellow-50 text-yellow-800 border-yellow-200
+          {% else %} bg-blue-50 text-blue-800 border-blue-200
+          {% endif %}">
+                {{ message }}
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Formulario -->
+            <form method="post" action="" class="space-y-5" id="login-form">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+
+              <div>
+                <label for="username" class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                  Usuario o email
+                </label>
+                <input type="text" id="username" name="username" autocomplete="username" required
+                       placeholder="tu.usuario@example.com"
+                       class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+              </div>
+
+              <div>
+                <label for="password" class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                  Contraseña
+                </label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required
+                       placeholder="••••••••"
+                       class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+              </div>
+
+              <button type="submit"
+                      class="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+                Ingresar
+              </button>
+
+              <div class="text-center pt-4 text-xs text-gray-500">
+                ¿Necesitas una cuenta? o ¿Se te olvido la clave? Solicítala al administrador:
+                <a href="mailto:{{ support_email|default:'admin@tudominio.com' }}?subject=Solicitud%20de%20cuenta%20Agente%20IA"
+                   class="underline text-blue-600">
+                  {{ support_email|default:'admin@tudominio.com' }}
+                </a>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="content-layer py-6 px-4 text-center text-xs text-gray-500 dark:text-gray-500 border-t border-gray-200 dark:border-gray-800">
+        <p class="font-medium">Universidad Nacional Mayor de San Marcos</p>
+        <p class="mt-1">Facultad de Ciencias Contables</p>
+        <p class="mt-1">Proyecto financiado por la UNMSM R.R. N°05446-225-R/UNMSM 25/04/2025
+          SIAF N°19744 Código de proyecto D25113671</p>
+      </footer>
+
+    </div>
+  </section>
+
+</article>
+
+<!-- GSAP Animation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script>
   (function(){
     let width, height, canvas, ctx, points, target, animateHeader = true;
-    function init(){
-      width = window.innerWidth; height = window.innerHeight;
-      target = {x: width/2, y: height/2};
-      const holder = document.getElementById('animated-bg'); if(!holder) return;
-      canvas = document.getElementById('demo-canvas'); if(!canvas) return;
-      canvas.width = width; canvas.height = height; ctx = canvas.getContext('2d');
+    const rightPane = document.querySelector('section.flex-1');
 
+    function init(){
+      if(!rightPane) return;
+
+      const rect = rightPane.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+
+      canvas = document.getElementById('demo-canvas');
+      if(!canvas) return;
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx = canvas.getContext('2d');
+
+      target = {x: width/2, y: height/2};
       points = [];
-      for(let x=0; x<width; x+= width/20){
-        for(let y=0; y<height; y+= height/20){
-          const px = x + Math.random()*width/20;
-          const py = y + Math.random()*height/20;
-          const p = {x:px, originX:px, y:py, originY:py};
-          points.push(p);
+
+      const stepX = Math.max(50, width/15);
+      const stepY = Math.max(50, height/15);
+
+      for(let x = 0; x < width; x += stepX){
+        for(let y = 0; y < height; y += stepY){
+          const px = x + Math.random() * stepX;
+          const py = y + Math.random() * stepY;
+          points.push({x: px, originX: px, y: py, originY: py});
         }
       }
-      for(let i=0;i<points.length;i++){
-        const p1 = points[i]; const closest = [];
-        for(let j=0;j<points.length;j++){
-          const p2 = points[j]; if(p1===p2) continue;
-          let placed=false;
-          for(let k=0;k<5;k++){ if(!closest[k]){ closest[k]=p2; placed=true; break; } }
-          for(let k=0;k<5 && !placed;k++){ if(getDistance(p1,p2) < getDistance(p1, closest[k])){ closest[k]=p2; placed=true; } }
-        }
+
+      points.forEach(p1 => {
+        const closest = [];
+        points.forEach(p2 => {
+          if(p1 === p2) return;
+          let placed = false;
+
+          for(let k = 0; k < 5; k++){
+            if(!closest[k]){ closest[k] = p2; placed = true; break; }
+          }
+
+          if(!placed){
+            for(let k = 0; k < 5; k++){
+              if(getDistance(p1, p2) < getDistance(p1, closest[k])){
+                closest[k] = p2;
+                break;
+              }
+            }
+          }
+        });
         p1.closest = closest;
-      }
-      points.forEach(p=>{ p.circle = new Circle(p, 2+Math.random()*2); shiftPoint(p); });
+        p1.circle = new Circle(p1, 3 + Math.random() * 3);
+        shiftPoint(p1);
+      });
+
       animate();
     }
-    function shiftPoint(p){ gsap.to(p, { duration: 1 + Math.random(), x: p.originX-50 + Math.random()*100, y: p.originY-50 + Math.random()*100, ease: 'circ.inOut', onComplete: ()=>shiftPoint(p)}); }
+
+    function shiftPoint(p){
+      gsap.to(p, {
+        duration: 1 + Math.random() * 2,
+        x: p.originX - 50 + Math.random() * 100,
+        y: p.originY - 50 + Math.random() * 100,
+        ease: 'circ.inOut',
+        onComplete: () => shiftPoint(p)
+      });
+    }
+
     function animate(){
-      if(!ctx) return;
-      if(animateHeader){
-        ctx.clearRect(0,0,width,height);
-        for(const p of points){
-          const d = Math.abs(getDistance(target,p));
-          if(d < 4000){ p.active=0.3; p.circle.active=0.6; }
-          else if(d < 20000){ p.active=0.1; p.circle.active=0.3; }
-          else if(d < 40000){ p.active=0.02; p.circle.active=0.1; }
-          else { p.active=0; p.circle.active=0; }
-          drawLines(p); p.circle.draw();
+      if(!ctx || !animateHeader) return;
+
+      ctx.clearRect(0, 0, width, height);
+
+      points.forEach(p => {
+        const distance = Math.abs(getDistance(target, p));
+
+        if(distance < 4000){
+          p.active = 0.4;
+          p.circle.active = 0.6;
+        } else if(distance < 20000){
+          p.active = 0.2;
+          p.circle.active = 0.4;
+        } else if(distance < 40000){
+          p.active = 0.1;
+          p.circle.active = 0.2;
+        } else {
+          p.active = 0;
+          p.circle.active = 0;
         }
-      }
+
+        drawLines(p);
+        p.circle.draw();
+      });
+
       requestAnimationFrame(animate);
     }
+
     function drawLines(p){
-      if(!p.active) return;
-      for(const c of p.closest){
-        ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(c.x,c.y);
-        ctx.strokeStyle = 'rgba(156,217,249,'+ p.active +')'; ctx.stroke();
-      }
+      if(!p.active || !p.closest) return;
+
+      p.closest.forEach(closestPoint => {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(closestPoint.x, closestPoint.y);
+        ctx.strokeStyle = `rgba(122, 49, 53, ${p.active})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
     }
-    function Circle(pos, rad){ this.pos=pos; this.radius=rad; this.active=0; this.draw=function(){ if(!this.active) return; ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,this.radius,0,Math.PI*2,false); ctx.fillStyle='rgba(156,217,249,'+this.active+')'; ctx.fill(); } }
-    function getDistance(p1,p2){ return Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2); }
-    window.addEventListener('mousemove', e=>{ target={x:e.clientX, y:e.clientY}; });
-    window.addEventListener('scroll', ()=>{ animateHeader = document.documentElement.scrollTop <= height; });
-    window.addEventListener('resize', ()=>{ width=window.innerWidth; height=window.innerHeight; if(canvas){ canvas.width=width; canvas.height=height; } });
+
+    function Circle(pos, rad){
+      this.pos = pos;
+      this.radius = rad;
+      this.active = 0;
+
+      this.draw = function(){
+        if(!this.active) return;
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2, false);
+        ctx.fillStyle = `rgba(122, 49, 53, ${this.active})`;
+        ctx.fill();
+      };
+    }
+
+    function getDistance(p1, p2){
+      return Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
+    }
+
+    // Mouse tracking
+    if(rightPane){
+      rightPane.addEventListener('mousemove', e => {
+        const rect = rightPane.getBoundingClientRect();
+        target = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      });
+    }
+
+    // Resize handler
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if(!rightPane || !canvas) return;
+        const rect = rightPane.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        canvas.width = width;
+        canvas.height = height;
+      }, 250);
+    });
+
     init();
   })();
 </script>
-<script>
-  (function(){ const alerts = document.getElementById('login-alerts'); if(alerts){ setTimeout(()=>alerts.remove(), 4000); }})();
-</script>
+
 </body>
 </html>

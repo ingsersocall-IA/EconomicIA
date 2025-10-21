@@ -21,46 +21,68 @@ from django.views.decorators.csrf import  csrf_protect
 from django.utils import timezone
 from django.contrib.auth.decorators import  permission_required
 from .models import Conversation, Message
+from django.views.decorators.http import require_http_methods
+
 # Añade esto al principio del archivo
 logger = logging.getLogger(__name__)
-
+from datetime import timedelta
+import re
 from .models import Conversation, Message, Folder
-
+from django.contrib.auth import get_user_model
+User = get_user_model()
 WEBHOOK_API_URL = "http://localhost:5678/webhook/Economic"
 WEBHOOK_API_URL_save = "http://localhost:5678/webhook/IngesEconmic"
 logger = logging.getLogger(__name__)
 
 def login_view(request):
+    # toma el correo desde settings o usa un fallback
+    support_email = getattr(settings, 'SUPPORT_EMAIL', 'admin@tudominio.com')
+
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            messages.success(request, f'Bienvenido, {user.username}!')
+            messages.success(request, f'Bienvenido, {user.username}!', extra_tags='auth')
+
+            # Admin/staff → puerta de re-autenticación
+            if user.is_staff or user.is_superuser:
+                return redirect('admin_gate')
+
+            # Usuario normal → directo al chat
             return redirect('chat_list')
         else:
-            messages.error(request, 'Usuario o contraseña incorrectos.')
+            messages.error(request, 'Usuario o contraseña incorrectos.', extra_tags='auth')
+            # Render con form + support_email cuando hay error
+            return render(request, 'chat/login.html', {
+                'form': form,
+                'support_email': support_email,
+            })
     else:
         form = AuthenticationForm()
-    return render(request, 'chat/login.html', {'form': form})
+
+    # Render inicial (GET)
+    return render(request, 'chat/login.html', {
+        'form': form,
+        'support_email': support_email,
+    })
+def _require_recent_admin_reauth(request):
+    ts = request.session.get('admin_reauth_at')
+    if not ts:
+        return False
+    try:
+        dt = datetime.fromisoformat(ts)
+    except Exception:
+        return False
+    return (timezone.now() - dt) <= timedelta(minutes=10)
 
 def register_view(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            messages.success(request, 'Cuenta creada con éxito. Inicia sesión.')
-            return redirect('login')
-        else:
-            messages.error(request, 'Corrige los errores a continuación.')
-    else:
-        form = UserCreationForm()
-    return render(request, 'chat/register.html', {'form': form})
-
+    messages.error(request, 'El registro público está deshabilitado. Solicita acceso a un administrador.')
+    return redirect('login')
 @login_required
 def logout_view(request):
     logout(request)
-    messages.info(request, 'Has cerrado sesión.')
+    messages.info(request, 'Has cerrado sesión.', extra_tags='auth')
     return redirect('login')
 
 @login_required
@@ -105,8 +127,32 @@ def chat_view(request, conv_id=None):
     return render(request, "chat/chat.html", context)
 
 # chat/views.py
-from django.views.decorators.http import require_http_methods
+LEADING_PRE_RE = re.compile(r'^\s*<pre[^>]*>\s*<code[^>]*>(.*?)</code>\s*</pre>', re.I | re.S)
 
+def _sanitize_leading(text: str) -> str:
+    """Quita indentación/saltos al inicio para evitar que Markdown u orígenes
+    lo conviertan en bloque de código."""
+    if not text:
+        return ""
+    t = text.lstrip()
+    # Si la primera línea aún empieza con 4+ espacios, límpiala (sin tocar fences ```).
+    lines = t.splitlines()
+    if lines and lines[0].startswith("    ") and not lines[0].lstrip().startswith("```"):
+        lines[0] = lines[0].lstrip()
+    return "\n".join(lines)
+
+def _unwrap_leading_pre(html: str) -> str:
+    """Si el contenido empieza con <pre><code>…</code></pre>, lo convierte a <p>…</p>
+    para que no 'flote' fuera del globo."""
+    if not html:
+        return ""
+    m = LEADING_PRE_RE.match(html)
+    if not m:
+        return html
+    inner = m.group(1)
+    # Quitamos espacios/saltos iniciales y dejamos un <p>
+    inner = inner.lstrip(" \t\r\n")
+    return f"<p>{inner}</p>" + html[m.end():]
 @login_required
 @csrf_exempt  # Temporal para depuración (luego lo quitamos)
 @require_http_methods(["POST"])
@@ -122,7 +168,10 @@ def generate_response(request):
         else:
             user_prompt = request.POST.get('prompt')
             conv_id = request.POST.get('conv_id')
-
+        # 🔽 Normaliza para evitar sangría/salto al inicio del globo
+        user_prompt = (user_prompt or "")
+        user_prompt = _sanitize_leading(user_prompt)
+        conv_id = str(conv_id or "").strip()
         if not user_prompt or not conv_id:
             return JsonResponse({'error': 'Faltan los campos "prompt" o "conv_id"'}, status=400)
 
@@ -177,7 +226,8 @@ def generate_response(request):
 
             if isinstance(response_data, list) and len(response_data) > 0:
                 data = response_data[0]
-                assistant_msg = data.get("reply", "").strip()
+                assistant_msg = _sanitize_leading(data.get("reply", ""))
+                assistant_msg = _unwrap_leading_pre(assistant_msg)
                 if not assistant_msg:
                     assistant_msg = "Lo siento, no pude generar una respuesta."
 
@@ -463,3 +513,138 @@ def save_conversation_to_n8n(request):
         return JsonResponse({"ok": False, "error": f"Error enviando a n8n: {e}"}, status=502)
 
     return JsonResponse({"ok": True, "n8n_status": resp.status_code})
+
+# === NUEVO: Puerta de Admin (re-autenticación)
+@login_required
+def admin_gate(request):
+    # Solo admins/staff pueden pasar por aquí
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("No autorizado.")
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+
+        # Por seguridad, el username debe ser el del usuario logueado
+        if username != request.user.username:
+            messages.error(request, 'Usuario no coincide con la sesión activa.')
+            return redirect('admin_gate')
+
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            messages.error(request, 'Credenciales inválidas.')
+            return redirect('admin_gate')
+
+        # Guardamos la marca de re-autenticación
+        request.session['admin_reauth_at'] = timezone.now().isoformat()
+        return redirect('admin_selector')
+
+    return render(request, 'chat/admin_gate.html', {
+        'username': request.user.username
+    })
+
+# === NUEVO: Selector de Admin (dos botones)
+@login_required
+def admin_selector(request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("No autorizado.")
+
+    # Si no hay reauth reciente, devolver a la puerta
+    if not _require_recent_admin_reauth(request):
+        return redirect('admin_gate')
+
+    return render(request, 'chat/admin_selector.html')
+
+@login_required
+def admin_panel(request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("No autorizado.")
+    if not _require_recent_admin_reauth(request):
+        return redirect('admin_gate')
+
+    users = User.objects.all().order_by('username')
+    return render(request, 'chat/admin_panel2.html', {'users': users})
+
+# === NUEVO: Crear usuario simple (no admin)
+@login_required
+@require_POST
+def admin_create_user(request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("No autorizado.")
+    if not _require_recent_admin_reauth(request):
+        return redirect('admin_gate')
+
+    username = (request.POST.get('username') or '').strip()
+    email = (request.POST.get('email') or '').strip()
+    p1 = request.POST.get('password1') or ''
+    p2 = request.POST.get('password2') or ''
+
+    if not username or not p1 or not p2:
+        messages.error(request, 'Completa usuario y contraseñas.')
+        return redirect('admin_panel')
+
+    if p1 != p2:
+        messages.error(request, 'Las contraseñas no coinciden.')
+        return redirect('admin_panel')
+
+    if User.objects.filter(username=username).exists():
+        messages.error(request, 'El usuario ya existe.')
+        return redirect('admin_panel')
+
+    # Fuerza siempre usuario simple (no staff, no superuser)
+    u = User.objects.create_user(username=username, email=email)
+    u.is_staff = False
+    u.is_superuser = False
+    u.set_password(p1)
+    u.save()
+
+    messages.success(request, f'Usuario "{username}" creado (rol simple).')
+    return redirect('admin_panel')
+# === NUEVO: Cambiar contraseña de un usuario (prohibido para superusers)
+@login_required
+@require_POST
+def admin_set_password(request, user_id):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("No autorizado.")
+    if not _require_recent_admin_reauth(request):
+        return redirect('admin_gate')
+
+    target = get_object_or_404(User, id=user_id)
+    p1 = request.POST.get('new_password1') or ''
+    p2 = request.POST.get('new_password2') or ''
+
+    if target.is_superuser:
+        messages.error(request, 'No se puede modificar la contraseña de un superusuario desde este panel.')
+        return redirect('admin_panel')
+
+    if not p1 or p1 != p2:
+        messages.error(request, 'Las contraseñas no coinciden.')
+        return redirect('admin_panel')
+
+    target.set_password(p1)
+    target.save()
+    messages.success(request, f'Contraseña actualizada para {target.username}.')
+    return redirect('admin_panel')
+# === NUEVO: Eliminar usuario simple (no staff / no superuser / no tú mismo)
+@login_required
+@require_POST
+def admin_delete_user(request, user_id):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("No autorizado.")
+    if not _require_recent_admin_reauth(request):
+        return redirect('admin_gate')
+
+    target = get_object_or_404(User, id=user_id)
+
+    if target.id == request.user.id:
+        messages.error(request, 'No puedes eliminar tu propia cuenta.')
+        return redirect('admin_panel')
+
+    if target.is_superuser or target.is_staff:
+        messages.error(request, 'Solo se pueden eliminar usuarios simples.')
+        return redirect('admin_panel')
+
+    username = target.username
+    target.delete()
+    messages.success(request, f'Usuario "{username}" eliminado.')
+    return redirect('admin_panel')

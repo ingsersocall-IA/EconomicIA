@@ -32,4 +32,13 @@ urlpatterns = [
     path('message/<int:message_id>/delete/', views.delete_single_message, name='delete_single_message'),
     path('message/<int:message_id>/delete-upwards/', views.delete_messages_upwards, name='delete_messages_upwards'),
     path("api/save-conversation/", views.save_conversation_to_n8n, name="save_conversation"),
+     # === NUEVO: flujo admin ===
+      # DESPUÉS (sin conflicto)
+      path('panel-admin/gate/', views.admin_gate, name='admin_gate'),
+      path('panel-admin/selector/', views.admin_selector, name='admin_selector'),
+      path('panel-admin/panel/', views.admin_panel, name='admin_panel'),
+      path('panel-admin/create-user/', views.admin_create_user, name='admin_create_user'),
+      path('panel-admin/set-password/<int:user_id>/', views.admin_set_password, name='admin_set_password'),
+      path('panel-admin/delete-user/<int:user_id>/', views.admin_delete_user, name='admin_delete_user'),
+
 ]

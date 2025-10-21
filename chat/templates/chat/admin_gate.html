@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmación de administrador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<main class="bg-white rounded-2xl shadow p-8 w-full max-w-md">
+    <h1 class="text-xl font-semibold mb-2">Confirmar identidad</h1>
+    <p class="text-sm text-gray-600 mb-6">Necesitamos validar tus credenciales para acceder a opciones de administrador.</p>
+
+    {% if messages %}
+    {% for message in messages %}
+    {% if 'auth' not in message.tags %}
+    <div class="mb-4 px-3 py-2 rounded border">
+        {{ message }}
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="block text-sm font-medium mb-1">Usuario</label>
+            <input name="username" value="{{ username }}" readonly
+                   class="w-full px-3 py-2 rounded border bg-gray-100 text-gray-700">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Contraseña</label>
+            <input name="password" type="password" required
+                   class="w-full px-3 py-2 rounded border">
+        </div>
+
+        <button class="w-full py-2 rounded bg-gray-900 text-white hover:bg-black">Validar</button>
+        <a href="{% url 'chat_list' %}" class="block text-center text-sm text-blue-600 mt-2">Volver al agente</a>
+    </form>
+</main>
+</body>
+</html>

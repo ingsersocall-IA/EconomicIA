@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Selecciona una acción</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+<main class="bg-white rounded-2xl shadow p-8 w-full max-w-lg">
+  <h1 class="text-xl font-semibold mb-3">Modo administrador</h1>
+  <p class="text-sm text-gray-600 mb-4">
+    Acceso confirmado. ¿A dónde quieres ir?
+  </p>
+
+  <!-- Mensajes: ignorar los de login/logout (tag 'auth') -->
+  {% if messages %}
+  <div class="mb-4 space-y-2">
+    {% for message in messages %}
+    {% if 'auth' not in message.tags %}
+    <div class="px-4 py-3 text-sm rounded-lg border
+            {% if message.level_tag == 'success' %} bg-green-50 text-green-800 border-green-200
+            {% elif message.level_tag == 'error' %} bg-red-50 text-red-800 border-red-200
+            {% elif message.level_tag == 'warning' %} bg-yellow-50 text-yellow-800 border-yellow-200
+            {% else %} bg-blue-50 text-blue-800 border-blue-200
+            {% endif %}">
+      {{ message }}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <a href="{% url 'chat_list' %}" class="px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-center">
+      Entrar al Agente
+    </a>
+    <a href="{% url 'admin_panel' %}" class="px-4 py-3 rounded-xl bg-gray-900 hover:bg-black text-white text-center">
+      Panel de Administración
+    </a>
+  </div>
+
+  <a href="{% url 'logout' %}" class="block text-center text-xs text-gray-500 mt-6">Cerrar sesión</a>
+</main>
+</body>
+</html>
