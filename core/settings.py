@@ -26,7 +26,20 @@ SECRET_KEY = 'django-insecure--v)n&&o!w-1hztsj6@#s)9$^(58$-qf6_up_pxoaia15t2a4z9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+# Hosts que tu app puede servir
+ALLOWED_HOSTS = [
+    "localhost", "127.0.0.1", "[::1]",
+    ".ngrok-free.dev", ".ngrok-free.app",   # cualquier subdominio ngrok
+    "200.60.99.116",                        # si accedes por IP
+]
+
+# Orígenes confiables para POST (DEBE incluir http/https)
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.dev",
+    "https://*.ngrok-free.app",
+    "https://200.60.99.116",
+]
+
 
 
 # Application definition
@@ -75,9 +88,14 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL')
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'OllamaEco',
+        'USER': 'postgres',
+        'PASSWORD': 'ssosa',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 # Password validation
